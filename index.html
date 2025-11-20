@@ -9,60 +9,254 @@
       .sensitive { letter-spacing: 0.2em; }
       .masked { color: #000; background: #e9ecef; padding: .25rem .5rem; border-radius: .25rem; }
       .small-dot { font-family: monospace; }
+
+      /* layout tweaks for modals with iframe */
+      .doc-iframe { width: 100%; height: 75vh; border: 0; }
+      .modal-xl .modal-dialog { max-width: 1200px; }
     </style>
   </head>
   <body class="bg-light">
     <div class="container py-5">
       <div class="row justify-content-center">
-        <div class="col-12 col-md-9 col-lg-7">
+        <div class="col-12 col-md-11 col-lg-10">
           <div class="card shadow-sm">
             <div class="card-header">
               <h4 class="mb-0">Información de Nelly Quiroz</h4>
             </div>
             <div class="card-body">
-              <p class="mb-1"><strong>Nombre:</strong> Nelly Quiroz</p>
-              <p class="mb-3"><strong>Cédula de Identidad:</strong> 6251509</p>
 
-              <hr />
-
-              <h5>Acceso a sistema Patria</h5>
-              <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="febrero17">••••••••</span></p>
-
-              <h5 class="mt-4">Acceso Bancaribe</h5>
-              <p><strong>Usuario:</strong> nellycq17</p>
-              <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
-
-              <h5 class="mt-4">Acceso Banco Mercantil</h5>
-              <p><strong>Usuario:</strong> nellycq6</p>
-              <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
-
-              <hr />
-
-              <h5>Preguntas de seguridad (respuestas en minúsculas)</h5>
-              <ul>
-                <li>¿Segundo nombre de su hijo? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
-                <li>¿Segundo nombre de su madre? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
-                <li>¿En qué ciudad nació su madre? <strong class="masked sensitive" data-value="caracas">••••••</strong></li>
-                <li>¿Fecha de nacimiento de su hijo mayor? <strong class="masked sensitive" data-value="enero16">•••••</strong></li>
-                <li>¿Donde nació su hijo? <strong class="masked sensitive" data-value="santiago de leon">••••••••••••••</strong></li>
+              <!-- Nav tabs -->
+              <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="datos-tab" data-bs-toggle="tab" data-bs-target="#datos" type="button" role="tab" aria-controls="datos" aria-selected="true">Datos Básicos</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab" aria-controls="docs" aria-selected="false">Documentos</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="compras-tab" data-bs-toggle="tab" data-bs-target="#compras" type="button" role="tab" aria-controls="compras" aria-selected="false">Compras</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="movimientos-tab" data-bs-toggle="tab" data-bs-target="#movimientos" type="button" role="tab" aria-controls="movimientos" aria-selected="false">Ingresos y Egresos</button>
+                </li>
               </ul>
 
-              <div class="mt-4">
-                <label for="masterKey" class="form-label">Ingrese la clave para revelar contraseñas y respuestas de seguridad</label>
-                <div class="input-group mb-3">
-                  <input id="masterKey" type="password" class="form-control" placeholder="Clave" aria-label="Clave" />
-                  <button id="unmaskBtn" class="btn btn-primary" type="button">Revelar</button>
-                </div>
-                <div id="feedback" class="text-muted small">Las contraseñas y respuestas están ocultas por seguridad. Para verlas, escriba la clave correcta.</div>
-              </div>
+              <div class="tab-content mt-4" id="mainTabsContent">
 
-            </div>
+                <!-- Tab 1: Datos Básicos -->
+                <div class="tab-pane fade show active" id="datos" role="tabpanel" aria-labelledby="datos-tab">
+                  <p class="mb-1"><strong>Nombre:</strong> Nelly Quiroz</p>
+                  <p class="mb-3"><strong>Cédula de Identidad:</strong> 6251509</p>
+
+                  <hr />
+
+                  <h5>Acceso a sistema Patria</h5>
+                  <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="febrero17">••••••••</span></p>
+
+                  <h5 class="mt-4">Acceso Bancaribe</h5>
+                  <p><strong>Usuario:</strong> nellycq17</p>
+                  <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
+
+                  <h5 class="mt-4">Acceso Banco Mercantil</h5>
+                  <p><strong>Usuario:</strong> nellycq6</p>
+                  <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
+
+                  <hr />
+
+                  <h5>Preguntas de seguridad (respuestas en minúsculas)</h5>
+                  <ul>
+                    <li>¿Segundo nombre de su hijo? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
+                    <li>¿Segundo nombre de su madre? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
+                    <li>¿En qué ciudad nació su madre? <strong class="masked sensitive" data-value="caracas">••••••</strong></li>
+                    <li>¿Fecha de nacimiento de su hijo mayor? <strong class="masked sensitive" data-value="enero16">•••••</strong></li>
+                    <li>¿Donde nació su hijo? <strong class="masked sensitive" data-value="santiago de leon">••••••••••••••</strong></li>
+                  </ul>
+
+                  <div class="mt-4">
+                    <label for="masterKey" class="form-label">Ingrese la clave para revelar contraseñas y respuestas de seguridad</label>
+                    <div class="input-group mb-3">
+                      <input id="masterKey" type="password" class="form-control" placeholder="Clave" aria-label="Clave" />
+                      <button id="unmaskBtn" class="btn btn-primary" type="button">Revelar</button>
+                    </div>
+                    <div id="feedback" class="text-muted small">Las contraseñas y respuestas están ocultas por seguridad. Para verlas, escriba la clave correcta.</div>
+                  </div>
+                </div>
+
+                <!-- Tab 2: Documentos -->
+                <div class="tab-pane fade" id="docs" role="tabpanel" aria-labelledby="docs-tab">
+                  <p class="mb-2">Lista de documentos almacenados en la carpeta <code>docs/</code>. Haga clic en cualquiera para visualizarlo en un modal.</p>
+
+                  <ul class="list-group" id="documentsList">
+                    <!-- Actualizado: archivos encontrados en docs/ -->
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/Mi Conexión Bancaribe - Personas .pdf" role="button">
+                      Mi Conexión Bancaribe - Personas .pdf
+                      <span class="badge bg-secondary">PDF</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/SENIAT.jpeg" role="button">
+                      SENIAT.jpeg
+                      <span class="badge bg-secondary">IMG</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/rif.pdf" role="button">
+                      rif.pdf
+                      <span class="badge bg-secondary">PDF</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/rif.png" role="button">
+                      rif.png
+                      <span class="badge bg-secondary">IMG</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/tarjeta bancaribe frente.jpeg" role="button">
+                      tarjeta bancaribe frente.jpeg
+                      <span class="badge bg-secondary">IMG</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/tarjeta bancaribe dorso.jpeg" role="button">
+                      tarjeta bancaribe dorso.jpeg
+                      <span class="badge bg-secondary">IMG</span>
+                    </li>
+                    <!-- Se incluye index.html porque existe dentro de docs/ (puede omitirse si no interesa mostrarlo) -->
+                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/index.html" role="button">
+                      docs/index.html
+                      <span class="badge bg-secondary">HTML</span>
+                    </li>
+                  </ul>
+
+                  <div class="mt-3 text-muted small">
+                    Nota: los nombres contienen espacios y caracteres especiales; el visor usa encodeURI al cargar el archivo para evitar errores.
+                  </div>
+                </div>
+
+                <!-- Tab 3: Compras -->
+                <div class="tab-pane fade" id="compras" role="tabpanel" aria-labelledby="compras-tab">
+                  <p class="mb-2">Archivos de compras en la carpeta <code>compras/</code>. Se abrirán en un modal XL para mejor visualización.</p>
+
+                  <ul class="list-group" id="comprasList">
+                    <!-- Actualizado: archivos encontrados en compras/ -->
+                    <li class="list-group-item d-flex justify-content-between align-items-center compra-item" data-file="compras/farmatodo_20Nov2025.html" role="button">
+                      farmatodo_20Nov2025.html
+                      <span class="badge bg-secondary">HTML</span>
+                    </li>
+                  </ul>
+
+                  <div class="mt-3 text-muted small">
+                    Nota: si agrega más archivos en la carpeta <code>compras/</code>, coloquelos en la misma carpeta pública y añada una entrada en la lista o implemente carga dinámica desde el servidor.
+                  </div>
+                </div>
+
+                <!-- Tab 4: Ingresos y Egresos -->
+                <div class="tab-pane fade" id="movimientos" role="tabpanel" aria-labelledby="movimientos-tab">
+                  <div class="row">
+                    <div class="col-md-5">
+                      <h6>Configuración y agregar movimiento</h6>
+
+                      <div class="mb-2">
+                        <label for="initialBalance" class="form-label small">Saldo inicial (Bs)</label>
+                        <input id="initialBalance" class="form-control form-control-sm" type="number" step="0.01" value="0.00" />
+                        <div class="form-text small">El cálculo del saldo parte de este valor. Si usted edita manualmente la tabla HTML y agrega filas, pulse "Recalcular desde tabla".</div>
+                      </div>
+
+                      <form id="movimientoForm" class="mb-3">
+                        <div class="mb-2">
+                          <label for="mDate" class="form-label small">Fecha</label>
+                          <input id="mDate" class="form-control form-control-sm" type="date" required />
+                        </div>
+                        <div class="mb-2">
+                          <label for="mDesc" class="form-label small">Descripción</label>
+                          <input id="mDesc" class="form-control form-control-sm" type="text" placeholder="Descripción" required />
+                        </div>
+                        <div class="mb-2">
+                          <label for="mType" class="form-label small">Tipo</label>
+                          <select id="mType" class="form-select form-select-sm" required>
+                            <option value="ingreso">Ingreso</option>
+                            <option value="egreso">Egreso</option>
+                          </select>
+                        </div>
+                        <div class="mb-2">
+                          <label for="mAmount" class="form-label small">Monto (Bs)</label>
+                          <input id="mAmount" class="form-control form-control-sm" type="number" step="0.01" min="0" required />
+                        </div>
+                        <button class="btn btn-sm btn-primary" type="submit">Agregar</button>
+                        <button class="btn btn-sm btn-secondary ms-2" id="clearMov" type="button">Limpiar</button>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" id="recalcFromDom" type="button">Recalcular desde tabla</button>
+                      </form>
+
+                      <div class="small text-muted">Puede agregar movimientos desde el formulario (se guardan en LocalStorage) o editar la tabla HTML directamente; use "Recalcular desde tabla" para que la rutina actualice el saldo según sus filas.</div>
+                    </div>
+
+                    <div class="col-md-7">
+                      <h6>Seguimiento de Ingresos y Egresos</h6>
+                      <div class="mb-2">
+                        <strong>Saldo actual: </strong><span id="currentBalance">Bs 0.00</span>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-striped" id="movimientosTable">
+                          <thead>
+                            <tr>
+                              <th>Fecha</th>
+                              <th>Descripción</th>
+                              <th class="text-end">Ingreso (Bs)</th>
+                              <th class="text-end">Egreso (Bs)</th>
+                              <th class="text-end">Saldo (Bs)</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <!-- Si usted edita el HTML y añade filas manualmente, cada fila debe tener:
+                                 <tr>
+                                   <td>2025-11-20</td>
+                                   <td>Descripción</td>
+                                   <td class="text-end">1000.00</td> <!-- ingreso -->
+                                   <td class="text-end">0.00</td>    <!-- egreso -->
+                                   <td class="text-end">1000.00</td> <!-- saldo (será recalculado) -->
+                                   <td class="text-end"><button class="btn btn-sm btn-outline-danger remove-row">&times;</button></td>
+                                 </tr>
+                            -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div> <!-- tab-content -->
+
+            </div> <!-- card-body -->
+
             <div class="card-footer text-muted small">Proteja esta página y evite compartir la clave con terceros.</div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Modal para documentos (tamaño por defecto) -->
+    <div class="modal fade" id="docModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="docModalTitle">Documento</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body p-0">
+            <iframe id="docIframe" class="doc-iframe" src=""></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal XL para compras -->
+    <div class="modal fade" id="compraModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="compraModalTitle">Compra</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body p-0">
+            <iframe id="compraIframe" class="doc-iframe" src=""></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       (function(){
         // Nota: esta clave queda en el código cliente y NO es segura contra usuarios que inspeccionen el HTML/JS.
@@ -95,6 +289,191 @@
 
         btn.addEventListener('click', reveal);
         input.addEventListener('keyup', function(e){ if (e.key === 'Enter') reveal(); });
+
+        // Documentos: abrir en modal (se usa encodeURI para manejar espacios/acentos)
+        const docModalEl = document.getElementById('docModal');
+        const docModal = new bootstrap.Modal(docModalEl);
+        const docIframe = document.getElementById('docIframe');
+        const docModalTitle = document.getElementById('docModalTitle');
+
+        document.querySelectorAll('.doc-item').forEach(li => {
+          li.addEventListener('click', () => {
+            const file = li.getAttribute('data-file');
+            docIframe.src = encodeURI(file);
+            docModalTitle.textContent = li.textContent.trim();
+            docModal.show();
+          });
+        });
+
+        docModalEl.addEventListener('hidden.bs.modal', () => {
+          // limpiar src para liberar memoria
+          docIframe.src = '';
+        });
+
+        // Compras: abrir en modal XL (encodeURI aplicado)
+        const compraModalEl = document.getElementById('compraModal');
+        const compraModal = new bootstrap.Modal(compraModalEl);
+        const compraIframe = document.getElementById('compraIframe');
+        const compraModalTitle = document.getElementById('compraModalTitle');
+
+        document.querySelectorAll('.compra-item').forEach(li => {
+          li.addEventListener('click', () => {
+            const file = li.getAttribute('data-file');
+            compraIframe.src = encodeURI(file);
+            compraModalTitle.textContent = li.textContent.trim();
+            compraModal.show();
+          });
+        });
+
+        compraModalEl.addEventListener('hidden.bs.modal', () => {
+          compraIframe.src = '';
+        });
+
+        // --- Ingresos y Egresos (seguimiento con saldo)
+        const STORAGE_KEY = 'nelly_movimientos_v1';
+        const form = document.getElementById('movimientoForm');
+        const tableBody = document.querySelector('#movimientosTable tbody');
+        const currentBalanceEl = document.getElementById('currentBalance');
+        const clearMov = document.getElementById('clearMov');
+        const recalcFromDomBtn = document.getElementById('recalcFromDom');
+        const initialBalanceInput = document.getElementById('initialBalance');
+
+        function formatCurrency(n) {
+          return Number(n).toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+
+        function parseNumberFromString(s) {
+          if (s === null || s === undefined) return 0;
+          // eliminar todo excepto dígitos, punto y signo menos
+          const cleaned = String(s).replace(/[^\d\.\-]/g, '');
+          const parsed = parseFloat(cleaned);
+          return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        // Cargar movimientos guardados en localStorage
+        function loadMovimientos() {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        }
+
+        function saveMovimientos(list) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        }
+
+        // Render basado en localStorage - crea filas con columnas Ingreso/Egreso y calcula saldo acumulado
+        function renderMovimientos() {
+          const list = loadMovimientos();
+          tableBody.innerHTML = '';
+          let saldo = parseNumberFromString(initialBalanceInput.value || 0);
+          list.forEach((m, idx) => {
+            const ingreso = m.type === 'ingreso' ? Number(m.amount) : 0;
+            const egreso = m.type === 'egreso' ? Number(m.amount) : 0;
+            saldo = saldo + ingreso - egreso;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${m.date}</td>
+              <td>${m.desc}</td>
+              <td class="text-end">${ingreso ? formatCurrency(ingreso) : '0.00'}</td>
+              <td class="text-end">${egreso ? formatCurrency(egreso) : '0.00'}</td>
+              <td class="text-end">${formatCurrency(saldo)}</td>
+              <td class="text-end"><button class="btn btn-sm btn-outline-danger remove-mov" data-idx="${idx}" title="Eliminar">&times;</button></td>
+            `;
+            tableBody.appendChild(tr);
+          });
+          currentBalanceEl.textContent = 'Bs ' + formatCurrency(saldo);
+        }
+
+        // Recalcular saldo leyendo las filas actualmente presentes en la tabla (para cuando usted edite HTML manualmente)
+        function recomputeFromDOM() {
+          let saldo = parseNumberFromString(initialBalanceInput.value || 0);
+          const rows = Array.from(tableBody.querySelectorAll('tr'));
+          rows.forEach((tr) => {
+            // asumimos estructura: td[2] = ingreso, td[3] = egreso
+            const tds = tr.querySelectorAll('td');
+            if (tds.length < 5) return; // fila no conforme
+            const ingreso = parseNumberFromString(tds[2].textContent || tds[2].innerText);
+            const egreso = parseNumberFromString(tds[3].textContent || tds[3].innerText);
+            saldo = saldo + ingreso - egreso;
+            // actualizar columna saldo (td[4])
+            tds[4].textContent = formatCurrency(saldo);
+          });
+          currentBalanceEl.textContent = 'Bs ' + formatCurrency(saldo);
+        }
+
+        // Añadir movimiento al almacenamiento y re-renderizar
+        function addMovimiento(m) {
+          const list = loadMovimientos();
+          list.push(m);
+          saveMovimientos(list);
+          renderMovimientos();
+        }
+
+        function removeMovimiento(index) {
+          const list = loadMovimientos();
+          list.splice(index, 1);
+          saveMovimientos(list);
+          renderMovimientos();
+        }
+
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          const m = {
+            date: document.getElementById('mDate').value || new Date().toISOString().slice(0,10),
+            desc: document.getElementById('mDesc').value || '',
+            type: document.getElementById('mType').value,
+            amount: parseFloat(document.getElementById('mAmount').value) || 0
+          };
+          addMovimiento(m);
+          form.reset();
+        });
+
+        // Manejo de botones en la tabla: eliminar fila (cuando proviene de localStorage)
+        tableBody.addEventListener('click', function(e){
+          if (e.target && e.target.matches('.remove-mov')) {
+            const idx = Number(e.target.getAttribute('data-idx'));
+            if (!Number.isNaN(idx)) removeMovimiento(idx);
+          }
+          if (e.target && e.target.matches('.remove-row')) {
+            // si la fila fue añadida manualmente en el DOM
+            const row = e.target.closest('tr');
+            if (row) {
+              row.remove();
+              recomputeFromDOM();
+            }
+          }
+        });
+
+        clearMov.addEventListener('click', function(){
+          if (confirm('¿Desea limpiar todos los movimientos guardados en localStorage? Esta acción no se puede deshacer.')) {
+            localStorage.removeItem(STORAGE_KEY);
+            renderMovimientos();
+          }
+        });
+
+        recalcFromDomBtn.addEventListener('click', function(){
+          recomputeFromDOM();
+          // Si desea, también puede opcionalmente persistir las filas manuales en localStorage aquí.
+        });
+
+        // Inicializar: si hay movimientos guardados, los mostramos; si no, intentamos recomputar desde cualquier fila existente en el HTML
+        (function initMovimientos() {
+          const list = loadMovimientos();
+          if (list && list.length > 0) {
+            renderMovimientos();
+          } else {
+            // No hay movimientos guardados: si hay filas en la tabla (si el usuario ya editó el HTML y añadió filas manuales),
+            // recalculamos usando el saldo inicial.
+            if (tableBody.querySelectorAll('tr').length > 0) {
+              recomputeFromDOM();
+            } else {
+              // Tabla vacía y sin localStorage: mostrar saldo inicial
+              const saldoInicial = parseNumberFromString(initialBalanceInput.value || 0);
+              currentBalanceEl.textContent = 'Bs ' + formatCurrency(saldoInicial);
+            }
+          }
+        })();
+
       })();
     </script>
   </body>
