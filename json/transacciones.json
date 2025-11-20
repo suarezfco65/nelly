@@ -1,0 +1,20 @@
+[
+  {
+    "fecha": "2025-11-01",
+    "descripcion": "Sueldo mensual",
+    "tipo": "ingreso",
+    "monto": 5000.00
+  },
+  {
+    "fecha": "2025-11-05",
+    "descripcion": "Pago electricidad",
+    "tipo": "egreso",
+    "monto": 120.50
+  },
+  {
+    "fecha": "2025-11-10",
+    "descripcion": "Venta producto X",
+    "tipo": "ingreso",
+    "monto": 250.00
+  }
+]
