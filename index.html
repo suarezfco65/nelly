@@ -1,1 +1,101 @@
-<html></html>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nelly Quiroz - Información</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      .sensitive { letter-spacing: 0.2em; }
+      .masked { color: #000; background: #e9ecef; padding: .25rem .5rem; border-radius: .25rem; }
+      .small-dot { font-family: monospace; }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-9 col-lg-7">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h4 class="mb-0">Información de Nelly Quiroz</h4>
+            </div>
+            <div class="card-body">
+              <p class="mb-1"><strong>Nombre:</strong> Nelly Quiroz</p>
+              <p class="mb-3"><strong>Cédula de Identidad:</strong> 6251509</p>
+
+              <hr />
+
+              <h5>Acceso a sistema Patria</h5>
+              <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="febrero17">••••••••</span></p>
+
+              <h5 class="mt-4">Acceso Bancaribe</h5>
+              <p><strong>Usuario:</strong> nellycq17</p>
+              <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
+
+              <h5 class="mt-4">Acceso Banco Mercantil</h5>
+              <p><strong>Usuario:</strong> nellycq6</p>
+              <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
+
+              <hr />
+
+              <h5>Preguntas de seguridad (respuestas en minúsculas)</h5>
+              <ul>
+                <li>¿Segundo nombre de su hijo? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
+                <li>¿Segundo nombre de su madre? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
+                <li>¿En qué ciudad nació su madre? <strong class="masked sensitive" data-value="caracas">••••••</strong></li>
+                <li>¿Fecha de nacimiento de su hijo mayor? <strong class="masked sensitive" data-value="enero16">•••••</strong></li>
+                <li>¿Donde nació su hijo? <strong class="masked sensitive" data-value="santiago de leon">••••••••••••••</strong></li>
+              </ul>
+
+              <div class="mt-4">
+                <label for="masterKey" class="form-label">Ingrese la clave para revelar contraseñas y respuestas de seguridad</label>
+                <div class="input-group mb-3">
+                  <input id="masterKey" type="password" class="form-control" placeholder="Clave" aria-label="Clave" />
+                  <button id="unmaskBtn" class="btn btn-primary" type="button">Revelar</button>
+                </div>
+                <div id="feedback" class="text-muted small">Las contraseñas y respuestas están ocultas por seguridad. Para verlas, escriba la clave correcta.</div>
+              </div>
+
+            </div>
+            <div class="card-footer text-muted small">Proteja esta página y evite compartir la clave con terceros.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        // Nota: esta clave queda en el código cliente y NO es segura contra usuarios que inspeccionen el HTML/JS.
+        // Clave para revelar: Ncq123
+        const KEY = 'Ncq123';
+        const btn = document.getElementById('unmaskBtn');
+        const input = document.getElementById('masterKey');
+        const feedback = document.getElementById('feedback');
+
+        function reveal() {
+          const v = (input.value || '').trim();
+          if (v === KEY) {
+            document.querySelectorAll('.sensitive').forEach(el => {
+              const val = el.getAttribute('data-value');
+              if (val !== null) {
+                el.textContent = val;
+                el.classList.remove('masked');
+              }
+            });
+            feedback.textContent = 'Información revelada.';
+            input.value = '';
+          } else {
+            feedback.textContent = 'Clave incorrecta.';
+            setTimeout(() => {
+              feedback.textContent = 'Las contraseñas y respuestas están ocultas por seguridad. Para verlas, escriba la clave correcta.';
+            }, 2000);
+            input.select();
+          }
+        }
+
+        btn.addEventListener('click', reveal);
+        input.addEventListener('keyup', function(e){ if (e.key === 'Enter') reveal(); });
+      })();
+    </script>
+  </body>
+</html>
