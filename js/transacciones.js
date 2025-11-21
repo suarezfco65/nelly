@@ -395,6 +395,125 @@ const transacciones = {
     });
   },
 
+  // Función de diagnóstico mejorada
+async diagnosticarToken(githubToken) {
+  try {
+    console.log('🔍 DIAGNÓSTICO COMPLETO DEL TOKEN');
+    
+    const tokenLimpio = githubToken.trim();
+    console.log('📝 Token (primeros 8 chars):', tokenLimpio.substring(0, 8) + '...');
+    console.log('📝 Longitud del token:', tokenLimpio.length);
+    
+    // Verificar formato del token (debe empezar con github_pat_)
+    if (!tokenLimpio.startsWith('github_pat_')) {
+      console.error('❌ FORMATO INCORRECTO: Los Fine-Grained Tokens deben empezar con "github_pat_"');
+      console.log('💡 El token proporcionado:', tokenLimpio.substring(0, 20) + '...');
+      return false;
+    }
+    
+    console.log('✅ Formato del token correcto');
+    
+    // Probar acceso al repositorio
+    console.log('🔗 Probando acceso al repositorio...');
+    const repoResponse = await fetch(
+      `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenLimpio}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      }
+    );
+    
+    console.log('📊 Status del repositorio:', repoResponse.status, repoResponse.statusText);
+    
+    if (repoResponse.status === 401) {
+      const errorData = await repoResponse.json();
+      console.error('❌ ERROR 401 - CREDENCIALES INCORRECTAS');
+      console.error('Posibles causas:');
+      console.error('1. Token expirado');
+      console.error('2. Token revocado');
+      console.error('3. Token sin permisos para este repositorio');
+      console.error('4. Formato de token incorrecto');
+      console.error('Detalles:', errorData);
+      return false;
+    }
+    
+    if (repoResponse.status === 403) {
+      const errorData = await repoResponse.json();
+      console.error('❌ ERROR 403 - PERMISOS INSUFICIENTES');
+      console.error('El token no tiene permisos para acceder al repositorio');
+      console.error('Detalles:', errorData);
+      return false;
+    }
+    
+    if (repoResponse.status === 404) {
+      console.error('❌ ERROR 404 - REPOSITORIO NO ENCONTRADO');
+      console.error('Verifica que el repositorio "suarezfco/nelly" exista');
+      return false;
+    }
+    
+    if (!repoResponse.ok) {
+      const errorData = await repoResponse.json();
+      console.error('❌ ERROR DESCONOCIDO:', repoResponse.status, errorData);
+      return false;
+    }
+    
+    const repoInfo = await repoResponse.json();
+    console.log('✅ REPOSITORIO ACCESIBLE:', repoInfo.full_name);
+    console.log('📁 Visibilidad:', repoInfo.visibility);
+    console.log('🔒 Privado:', repoInfo.private);
+    
+    // Probar permisos de escritura
+    console.log('✍️ Probando permisos de escritura...');
+    const testFileResponse = await fetch(
+      `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/TEST_README.md`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenLimpio}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      }
+    );
+    
+    console.log('📊 Status archivo test:', testFileResponse.status);
+    
+    // Verificar archivo de transacciones
+    console.log('📋 Verificando archivo de transacciones...');
+    const transaccionesResponse = await fetch(
+      `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${tokenLimpio}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      }
+    );
+    
+    console.log('📊 Status transacciones.json:', transaccionesResponse.status);
+    
+    if (transaccionesResponse.status === 200) {
+      console.log('✅ transacciones.json existe y es accesible');
+    } else if (transaccionesResponse.status === 404) {
+      console.log('ℹ️ transacciones.json no existe (se creará automáticamente)');
+    } else {
+      console.log('📊 Estado inesperado:', transaccionesResponse.status);
+    }
+    
+    console.log('🎉 DIAGNÓSTICO COMPLETADO - Token funciona correctamente');
+    return true;
+    
+  } catch (error) {
+    console.error('💥 ERROR EN DIAGNÓSTICO:', error);
+    return false;
+  }
+},
+  
   // Inicializar pestaña de transacciones
   inicializar() {
     this.inicializarEventos();
