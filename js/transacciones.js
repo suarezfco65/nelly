@@ -1,7 +1,7 @@
 const transacciones = {
   // Configuración para GitHub con Fine-Grained Token
   GITHUB_CONFIG: {
-    OWNER: 'suarezfco',
+    OWNER: 'suarezfco65',
     REPO: 'nelly',
     BRANCH: 'main',
     FILE_PATH: 'json/transacciones.json'
