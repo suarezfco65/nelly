@@ -7,6 +7,8 @@ const transacciones = {
     FILE_PATH: 'json/transacciones.json'
   },
 
+    PROXY_URL: '/api/proxy.js', // Ruta relativa al proxy en GitHub Pages
+
   // Función para cargar transacciones desde JSON
   async cargarTransacciones() {
     try {
@@ -162,62 +164,62 @@ const transacciones = {
     }
   },
 
-  // Función real para guardar en GitHub con Fine-Grained Token
-  async guardarEnGitHub(nuevaTransaccion, githubToken) {
+  // Función para llamar al proxy
+  async llamarProxy(accion, datos = {}, githubToken) {
     try {
-      console.log('Iniciando guardado en GitHub...');
-      console.log('Repo:', `${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`);
-      
-      // Limpiar el token de espacios en blanco
-      const tokenLimpio = githubToken.trim();
-      
-      // 1. Primero verificar que podemos acceder al repositorio
-      const testResponse = await fetch(
-        `https://api.github.com/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${tokenLimpio}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
-        }
-      );
+      const response = await fetch(this.PROXY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          githubToken: githubToken,
+          action: accion,
+          data: datos
+        })
+      });
 
-      if (!testResponse.ok) {
-        const errorData = await testResponse.json();
-        console.error('Error acceso repo:', errorData);
-        throw new Error(`No se puede acceder al repositorio: ${testResponse.status} - ${errorData.message}`);
+      if (!response.ok) {
+        throw new Error(`Error del proxy: ${response.status}`);
       }
 
+      const resultado = await response.json();
+      
+      if (!resultado.ok) {
+        throw new Error(`Error de GitHub: ${resultado.status} - ${resultado.data.message}`);
+      }
+      
+      return resultado.data;
+      
+    } catch (error) {
+      console.error('Error en llamarProxy:', error);
+      throw error;
+    }
+  },
+
+  // Función actualizada para guardar en GitHub usando proxy
+  async guardarEnGitHub(nuevaTransaccion, githubToken) {
+    try {
+      console.log('Iniciando guardado en GitHub via proxy...');
+      
+      const tokenLimpio = githubToken.trim();
+      
+      // 1. Verificar que podemos acceder al repositorio
+      await this.llamarProxy('testRepo', {}, tokenLimpio);
       console.log('✓ Acceso al repositorio verificado');
 
-      // 2. Obtener el archivo actual
-      const getResponse = await fetch(
-        `https://api.github.com/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${tokenLimpio}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
-        }
-      );
-
-      if (!getResponse.ok) {
-        const errorData = await getResponse.json();
-        console.error('Error obteniendo archivo:', errorData);
-        
-        // Si el archivo no existe, crear uno nuevo
-        if (getResponse.status === 404) {
+      // 2. Obtener el archivo actual (o crear uno nuevo si no existe)
+      let fileData;
+      try {
+        fileData = await this.llamarProxy('getFile', {}, tokenLimpio);
+        console.log('✓ Archivo actual obtenido');
+      } catch (error) {
+        if (error.message.includes('404')) {
           console.log('Archivo no existe, creando nuevo...');
           return await this.crearNuevoArchivo(nuevaTransaccion, tokenLimpio);
         }
-        
-        throw new Error(`Error al obtener archivo: ${getResponse.status} - ${errorData.message}`);
+        throw error;
       }
-
-      const fileData = await getResponse.json();
-      console.log('✓ Archivo actual obtenido');
       
       // 3. Actualizar el contenido
       const contenidoActual = JSON.parse(atob(fileData.content));
@@ -235,42 +237,25 @@ const transacciones = {
       contenidoActual.transacciones.unshift(nuevaTransaccion);
       
       // 4. Actualizar el archivo en GitHub
-      const updateResponse = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${tokenLimpio}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          },
-          body: JSON.stringify({
-            message: `Agregar transacción: ${nuevaTransaccion.descripcion}`,
-            content: btoa(JSON.stringify(contenidoActual, null, 2)),
-            sha: fileData.sha,
-            branch: this.GITHUB_CONFIG.BRANCH
-          })
-        }
-      );
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        console.error('Error actualizando archivo:', errorData);
-        throw new Error(`Error al actualizar: ${updateResponse.status} - ${errorData.message}`);
-      }
-
-      const result = await updateResponse.json();
+      const datosActualizacion = {
+        message: `Agregar transacción: ${nuevaTransaccion.descripcion}`,
+        content: btoa(JSON.stringify(contenidoActual, null, 2)),
+        sha: fileData.sha,
+        branch: this.GITHUB_CONFIG.BRANCH
+      };
+      
+      await this.llamarProxy('updateFile', datosActualizacion, tokenLimpio);
       console.log('✓ Archivo actualizado exitosamente');
-      return result;
+      
+      return { success: true };
       
     } catch (error) {
       console.error('Error completo en guardarEnGitHub:', error);
-      throw error;
+      throw new Error(`Error al guardar en GitHub: ${error.message}`);
     }
   },
 
-  // Función para crear nuevo archivo si no existe
+  // Función actualizada para crear nuevo archivo
   async crearNuevoArchivo(nuevaTransaccion, githubToken) {
     try {
       // Calcular saldo inicial
@@ -282,31 +267,16 @@ const transacciones = {
         transacciones: [nuevaTransaccion]
       };
       
-      const response = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${githubToken}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          },
-          body: JSON.stringify({
-            message: `Crear archivo de transacciones: ${nuevaTransaccion.descripcion}`,
-            content: btoa(JSON.stringify(contenidoInicial, null, 2)),
-            branch: this.GITHUB_CONFIG.BRANCH
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error creando archivo: ${response.status} - ${errorData.message}`);
-      }
-
+      const datosCreacion = {
+        message: `Crear archivo de transacciones: ${nuevaTransaccion.descripcion}`,
+        content: btoa(JSON.stringify(contenidoInicial, null, 2)),
+        branch: this.GITHUB_CONFIG.BRANCH
+      };
+      
+      await this.llamarProxy('updateFile', datosCreacion, githubToken);
       console.log('✓ Nuevo archivo creado exitosamente');
-      return await response.json();
+      
+      return { success: true };
       
     } catch (error) {
       console.error('Error en crearNuevoArchivo:', error);
@@ -314,205 +284,48 @@ const transacciones = {
     }
   },
 
-  // Función para probar el token (puedes llamarla desde la consola)
-  async probarToken(githubToken) {
+  // Función de diagnóstico actualizada
+  async diagnosticarToken(githubToken) {
     try {
-      console.log('🔍 Probando token...');
+      console.log('🔍 DIAGNÓSTICO COMPLETO DEL TOKEN (via proxy)');
       
       const tokenLimpio = githubToken.trim();
-      console.log('Token (primeros 10 chars):', tokenLimpio.substring(0, 10) + '...');
+      console.log('📝 Token (primeros 8 chars):', tokenLimpio.substring(0, 8) + '...');
       
-      // Probar acceso al repositorio
-      const repoResponse = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${tokenLimpio}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
-        }
-      );
-      
-      console.log('Status repositorio:', repoResponse.status);
-      
-      if (!repoResponse.ok) {
-        const errorData = await repoResponse.json();
-        console.error('❌ Error repositorio:', errorData);
+      // Verificar formato
+      if (!tokenLimpio.startsWith('github_pat_')) {
+        console.error('❌ FORMATO INCORRECTO');
         return false;
       }
       
-      console.log('✓ Repositorio accesible');
+      console.log('✅ Formato del token correcto');
+      
+      // Probar acceso al repositorio via proxy
+      console.log('🔗 Probando acceso al repositorio...');
+      const repoData = await this.llamarProxy('testRepo', {}, tokenLimpio);
+      console.log('✅ REPOSITORIO ACCESIBLE:', repoData.full_name);
       
       // Probar acceso al archivo
-      const fileResponse = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${tokenLimpio}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
+      console.log('📋 Verificando archivo de transacciones...');
+      try {
+        const fileData = await this.llamarProxy('getFile', {}, tokenLimpio);
+        console.log('✅ transacciones.json existe y es accesible');
+      } catch (error) {
+        if (error.message.includes('404')) {
+          console.log('ℹ️ transacciones.json no existe (se creará automáticamente)');
+        } else {
+          throw error;
         }
-      );
-      
-      console.log('Status archivo:', fileResponse.status);
-      
-      if (fileResponse.status === 404) {
-        console.log('ℹ️ Archivo no existe (esto es normal si es la primera vez)');
-      } else if (!fileResponse.ok) {
-        const errorData = await fileResponse.json();
-        console.error('❌ Error archivo:', errorData);
-        return false;
-      } else {
-        console.log('✓ Archivo accesible');
       }
       
-      console.log('✅ Token funciona correctamente');
+      console.log('🎉 DIAGNÓSTICO COMPLETADO - Token funciona correctamente');
       return true;
       
     } catch (error) {
-      console.error('❌ Error en prueba:', error);
+      console.error('💥 ERROR EN DIAGNÓSTICO:', error);
       return false;
     }
   },
-
-  // Función para inicializar eventos
-  inicializarEventos() {
-    // Botón para mostrar/ocultar formulario
-    document.getElementById('mostrarFormTransaccion').addEventListener('click', () => {
-      this.toggleFormulario();
-    });
-    
-    // Botón cancelar
-    document.getElementById('cancelarTransaccion').addEventListener('click', () => {
-      this.toggleFormulario();
-    });
-    
-    // Formulario de envío
-    document.getElementById('nuevaTransaccionForm').addEventListener('submit', (e) => {
-      this.manejarEnvioFormulario(e);
-    });
-  },
-
-  // Función de diagnóstico mejorada
-async diagnosticarToken(githubToken) {
-  try {
-    console.log('🔍 DIAGNÓSTICO COMPLETO DEL TOKEN');
-    
-    const tokenLimpio = githubToken.trim();
-    console.log('📝 Token (primeros 8 chars):', tokenLimpio.substring(0, 8) + '...');
-    console.log('📝 Longitud del token:', tokenLimpio.length);
-    
-    // Verificar formato del token (debe empezar con github_pat_)
-    if (!tokenLimpio.startsWith('github_pat_')) {
-      console.error('❌ FORMATO INCORRECTO: Los Fine-Grained Tokens deben empezar con "github_pat_"');
-      console.log('💡 El token proporcionado:', tokenLimpio.substring(0, 20) + '...');
-      return false;
-    }
-    
-    console.log('✅ Formato del token correcto');
-    
-    // Probar acceso al repositorio
-    console.log('🔗 Probando acceso al repositorio...');
-    const repoResponse = await fetch(
-      `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${tokenLimpio}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      }
-    );
-    
-    console.log('📊 Status del repositorio:', repoResponse.status, repoResponse.statusText);
-    
-    if (repoResponse.status === 401) {
-      const errorData = await repoResponse.json();
-      console.error('❌ ERROR 401 - CREDENCIALES INCORRECTAS');
-      console.error('Posibles causas:');
-      console.error('1. Token expirado');
-      console.error('2. Token revocado');
-      console.error('3. Token sin permisos para este repositorio');
-      console.error('4. Formato de token incorrecto');
-      console.error('Detalles:', errorData);
-      return false;
-    }
-    
-    if (repoResponse.status === 403) {
-      const errorData = await repoResponse.json();
-      console.error('❌ ERROR 403 - PERMISOS INSUFICIENTES');
-      console.error('El token no tiene permisos para acceder al repositorio');
-      console.error('Detalles:', errorData);
-      return false;
-    }
-    
-    if (repoResponse.status === 404) {
-      console.error('❌ ERROR 404 - REPOSITORIO NO ENCONTRADO');
-      console.error('Verifica que el repositorio "suarezfco/nelly" exista');
-      return false;
-    }
-    
-    if (!repoResponse.ok) {
-      const errorData = await repoResponse.json();
-      console.error('❌ ERROR DESCONOCIDO:', repoResponse.status, errorData);
-      return false;
-    }
-    
-    const repoInfo = await repoResponse.json();
-    console.log('✅ REPOSITORIO ACCESIBLE:', repoInfo.full_name);
-    console.log('📁 Visibilidad:', repoInfo.visibility);
-    console.log('🔒 Privado:', repoInfo.private);
-    
-    // Probar permisos de escritura
-    console.log('✍️ Probando permisos de escritura...');
-    const testFileResponse = await fetch(
-      `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/TEST_README.md`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${tokenLimpio}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      }
-    );
-    
-    console.log('📊 Status archivo test:', testFileResponse.status);
-    
-    // Verificar archivo de transacciones
-    console.log('📋 Verificando archivo de transacciones...');
-    const transaccionesResponse = await fetch(
-      `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${tokenLimpio}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      }
-    );
-    
-    console.log('📊 Status transacciones.json:', transaccionesResponse.status);
-    
-    if (transaccionesResponse.status === 200) {
-      console.log('✅ transacciones.json existe y es accesible');
-    } else if (transaccionesResponse.status === 404) {
-      console.log('ℹ️ transacciones.json no existe (se creará automáticamente)');
-    } else {
-      console.log('📊 Estado inesperado:', transaccionesResponse.status);
-    }
-    
-    console.log('🎉 DIAGNÓSTICO COMPLETADO - Token funciona correctamente');
-    return true;
-    
-  } catch (error) {
-    console.error('💥 ERROR EN DIAGNÓSTICO:', error);
-    return false;
-  }
-},
   
   // Inicializar pestaña de transacciones
   inicializar() {
