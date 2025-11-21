@@ -1,20 +1,39 @@
-[
-  {
-    "fecha": "2025-11-01",
-    "descripcion": "Sueldo mensual",
-    "tipo": "ingreso",
-    "monto": 5000.00
-  },
-  {
-    "fecha": "2025-11-05",
-    "descripcion": "Pago electricidad",
-    "tipo": "egreso",
-    "monto": 120.50
-  },
-  {
-    "fecha": "2025-11-10",
-    "descripcion": "Venta producto X",
-    "tipo": "ingreso",
-    "monto": 250.00
-  }
-]
+{
+  "transacciones": [
+    {
+      "fecha": "2024-01-15",
+      "descripcion": "Pago de servicios",
+      "ingreso": 0,
+      "egreso": 150.5,
+      "saldo": 2849.5
+    },
+    {
+      "fecha": "2024-01-14",
+      "descripcion": "Depósito bancario",
+      "ingreso": 3000,
+      "egreso": 0,
+      "saldo": 3000
+    },
+    {
+      "fecha": "2024-01-13",
+      "descripcion": "Compra supermercado",
+      "ingreso": 0,
+      "egreso": 250.75,
+      "saldo": 0
+    },
+    {
+      "fecha": "2024-01-12",
+      "descripcion": "Transferencia recibida",
+      "ingreso": 500,
+      "egreso": 0,
+      "saldo": 250.75
+    },
+    {
+      "fecha": "2024-01-11",
+      "descripcion": "Pago de internet",
+      "ingreso": 0,
+      "egreso": 45.25,
+      "saldo": -249.25
+    }
+  ]
+}
