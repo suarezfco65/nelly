@@ -7,8 +7,9 @@ const datosBasicos = {
     FILE_PATH: 'json/datos-basicos.json'
   },
 
-  // Datos actuales
+  // Datos actuales y estado
   datosActuales: null,
+  tokenActual: null,
 
   // Función para cargar datos básicos desde JSON
   async cargarDatos() {
@@ -19,15 +20,15 @@ const datosBasicos = {
       }
       const datos = await response.json();
       this.datosActuales = datos;
-      this.mostrarDatos(datos);
+      this.mostrarDatosOcultos(datos);
     } catch (error) {
       console.error('Error cargando datos:', error);
       this.mostrarError('Error al cargar los datos básicos: ' + error.message);
     }
   },
 
-  // Función para mostrar los datos en el HTML
-  mostrarDatos(datos) {
+  // Función para mostrar datos OCULTOS (inicial)
+  mostrarDatosOcultos(datos) {
     const contenido = `
       <div class="mb-4">
         <p class="mb-1"><strong>Nombre:</strong> ${datos.nombre}</p>
@@ -36,22 +37,22 @@ const datosBasicos = {
         <hr />
 
         <h5>Acceso a sistema Patria</h5>
-        <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="${datos.accesos.patria.contrasena}">${datos.accesos.patria.contrasena}</span></p>
+        <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="${datos.accesos.patria.contrasena}">••••••••</span></p>
 
         <h5 class="mt-4">Acceso Bancaribe</h5>
         <p><strong>Usuario:</strong> ${datos.accesos.bancaribe.usuario}</p>
-        <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="${datos.accesos.bancaribe.contrasena}">${datos.accesos.bancaribe.contrasena}</span></p>
+        <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="${datos.accesos.bancaribe.contrasena}">••••••••</span></p>
 
         <h5 class="mt-4">Acceso Banco Mercantil</h5>
         <p><strong>Usuario:</strong> ${datos.accesos.mercantil.usuario}</p>
-        <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="${datos.accesos.mercantil.contrasena}">${datos.accesos.mercantil.contrasena}</span></p>
+        <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="${datos.accesos.mercantil.contrasena}">••••••••</span></p>
 
         <hr />
 
         <h5>Preguntas de seguridad (respuestas en minúsculas)</h5>
         <ul>
           ${datos.preguntasSeguridad.map(p => `
-            <li>${p.pregunta} <strong class="masked sensitive" data-value="${p.respuesta}">${p.respuesta}</strong></li>
+            <li>${p.pregunta} <strong class="masked sensitive" data-value="${p.respuesta}">${'•'.repeat(p.respuesta.length)}</strong></li>
           `).join('')}
         </ul>
       </div>
@@ -81,19 +82,65 @@ const datosBasicos = {
     const btnModificar = document.getElementById('btnModificarDatos');
     if (btnModificar) {
       btnModificar.addEventListener('click', () => {
-        this.mostrarFormularioModificacion();
+        this.solicitarTokenModificacion();
       });
     }
   },
 
-  // Función para mostrar formulario de modificación
+  // Función para solicitar token antes de mostrar formulario
+  async solicitarTokenModificacion() {
+    const feedback = document.getElementById('datosContent');
+    
+    // Solicitar token de GitHub
+    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para modificar los datos:');
+    if (!githubToken) {
+      return;
+    }
+    
+    try {
+      // Mostrar mensaje de verificación
+      feedback.innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Verificando token...</span>
+          </div>
+          <p class="mt-2">Verificando token...</p>
+        </div>
+      `;
+      
+      // Verificar token
+      const tokenValido = await this.verificarToken(githubToken);
+      if (!tokenValido) {
+        throw new Error('Token inválido o sin permisos suficientes');
+      }
+      
+      // Guardar token para usar en el guardado
+      this.tokenActual = githubToken;
+      
+      // Mostrar formulario con datos revelados
+      this.mostrarFormularioModificacion();
+      
+    } catch (error) {
+      console.error('Error verificando token:', error);
+      this.mostrarError(`Error al verificar token: ${error.message}`);
+      // Recargar datos ocultos
+      setTimeout(() => {
+        this.mostrarDatosOcultos(this.datosActuales);
+      }, 3000);
+    }
+  },
+
+  // Función para mostrar formulario de modificación con datos REVELADOS
   mostrarFormularioModificacion() {
     const datos = this.datosActuales;
     
     const formulario = `
       <div class="card border-warning">
         <div class="card-header bg-warning text-dark">
-          <h5 class="mb-0">Modificar Datos Básicos</h5>
+          <h5 class="mb-0">
+            <i class="bi bi-pencil-square"></i> Modificar Datos Básicos
+            <small class="text-muted float-end">Token verificado ✓</small>
+          </h5>
         </div>
         <div class="card-body">
           <form id="formModificarDatos">
@@ -108,12 +155,13 @@ const datosBasicos = {
               </div>
             </div>
 
-            <h6 class="mt-4">Accesos</h6>
+            <h6 class="mt-4 border-bottom pb-2">Accesos a Sistemas</h6>
             
             <div class="row mb-3">
               <div class="col-md-12">
                 <label for="modPatriaPass" class="form-label">Contraseña Patria</label>
                 <input type="text" class="form-control" id="modPatriaPass" value="${datos.accesos.patria.contrasena}" required>
+                <div class="form-text">Contraseña actual: <code>${datos.accesos.patria.contrasena}</code></div>
               </div>
             </div>
 
@@ -125,6 +173,7 @@ const datosBasicos = {
               <div class="col-md-6">
                 <label for="modBancaribePass" class="form-label">Contraseña Bancaribe</label>
                 <input type="text" class="form-control" id="modBancaribePass" value="${datos.accesos.bancaribe.contrasena}" required>
+                <div class="form-text">Contraseña actual: <code>${datos.accesos.bancaribe.contrasena}</code></div>
               </div>
             </div>
 
@@ -136,23 +185,37 @@ const datosBasicos = {
               <div class="col-md-6">
                 <label for="modMercantilPass" class="form-label">Contraseña Mercantil</label>
                 <input type="text" class="form-control" id="modMercantilPass" value="${datos.accesos.mercantil.contrasena}" required>
+                <div class="form-text">Contraseña actual: <code>${datos.accesos.mercantil.contrasena}</code></div>
               </div>
             </div>
 
-            <h6 class="mt-4">Preguntas de Seguridad</h6>
+            <h6 class="mt-4 border-bottom pb-2">Preguntas de Seguridad</h6>
             
             ${datos.preguntasSeguridad.map((p, index) => `
               <div class="row mb-3">
                 <div class="col-md-12">
                   <label for="modPregunta${index}" class="form-label">${p.pregunta}</label>
                   <input type="text" class="form-control" id="modPregunta${index}" value="${p.respuesta}" required>
+                  <div class="form-text">Respuesta actual: <code>${p.respuesta}</code></div>
                 </div>
               </div>
             `).join('')}
 
+            <div class="mt-4 p-3 bg-light rounded">
+              <small class="text-muted">
+                <i class="bi bi-info-circle"></i> 
+                Los datos sensibles ahora son visibles porque el token de GitHub ha sido verificado.
+                Al guardar, los cambios se actualizarán directamente en el repositorio.
+              </small>
+            </div>
+
             <div class="mt-4">
-              <button type="submit" class="btn btn-success">Guardar Cambios</button>
-              <button type="button" id="btnCancelarModificacion" class="btn btn-secondary">Cancelar</button>
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Guardar Cambios
+              </button>
+              <button type="button" id="btnCancelarModificacion" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </button>
             </div>
           </form>
           <div id="feedbackModificacion" class="mt-3"></div>
@@ -168,37 +231,31 @@ const datosBasicos = {
     });
     
     document.getElementById('btnCancelarModificacion').addEventListener('click', () => {
-      this.mostrarDatos(this.datosActuales);
+      // Volver a mostrar datos ocultos
+      this.mostrarDatosOcultos(this.datosActuales);
+      this.tokenActual = null; // Limpiar token
     });
   },
 
-  // Función para manejar la modificación de datos
+  // Función para manejar la modificación de datos (SIN solicitar token nuevamente)
   async manejarModificacion(event) {
     event.preventDefault();
     
     const feedback = document.getElementById('feedbackModificacion');
     
-    // Solicitar token de GitHub
-    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para modificar los datos:');
-    if (!githubToken) {
-      feedback.innerHTML = '<div class="alert alert-warning">Token requerido para modificar</div>';
-      return;
-    }
-    
     try {
-      feedback.innerHTML = '<div class="alert alert-info">Verificando token y guardando cambios...</div>';
+      feedback.innerHTML = '<div class="alert alert-info">Guardando cambios en GitHub...</div>';
       
-      // Verificar token primero
-      const tokenValido = await this.verificarToken(githubToken);
-      if (!tokenValido) {
-        throw new Error('Token inválido o sin permisos suficientes');
+      // Verificar que tenemos token
+      if (!this.tokenActual) {
+        throw new Error('Token no disponible. Por favor, inicie el proceso de modificación nuevamente.');
       }
       
       // Obtener datos del formulario
       const datosModificados = this.obtenerDatosFormulario();
       
-      // Guardar en GitHub
-      await this.guardarEnGitHub(datosModificados, githubToken);
+      // Guardar en GitHub usando el token actual
+      await this.guardarEnGitHub(datosModificados, this.tokenActual);
       
       feedback.innerHTML = `
         <div class="alert alert-success">
@@ -218,7 +275,7 @@ const datosBasicos = {
       feedback.innerHTML = `
         <div class="alert alert-danger">
           <strong>Error al guardar:</strong> ${error.message}<br>
-          <small>Verifique el token y los permisos</small>
+          <small>Verifique la conexión y permisos</small>
         </div>
       `;
     }
@@ -233,7 +290,7 @@ const datosBasicos = {
       cedula: document.getElementById('modCedula').value,
       accesos: {
         patria: {
-          usuario: datos.accesos.patria.usuario,
+          usuario: datos.accesos.patria.usuario, // Mantener usuario si no está en el form
           contrasena: document.getElementById('modPatriaPass').value
         },
         bancaribe: {
