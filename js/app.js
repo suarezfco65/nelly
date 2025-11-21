@@ -30,36 +30,8 @@ const state = {
 
 // Función para inicializar eventos globales
 function inicializarEventosGlobales() {
-  // Eventos para revelar información (compartido entre pestañas)
-  elements.unmaskBtn.addEventListener("click", revelarInformacion);
-  elements.masterKey.addEventListener("keyup", function (event) {
-    if (event.key === "Enter") revelarInformacion();
-  });
 }
 
-// Función para revelar información sensible (global)
-function revelarInformacion() {
-  const claveIngresada = (elements.masterKey.value || "").trim();
-
-  if (claveIngresada === CONFIG.KEY) {
-    document.querySelectorAll(".sensitive").forEach((elemento) => {
-      const valorReal = elemento.getAttribute("data-value");
-      if (valorReal !== null) {
-        elemento.textContent = valorReal;
-        elemento.classList.remove("masked");
-      }
-    });
-    elements.feedback.textContent = "Información revelada.";
-    elements.masterKey.value = "";
-  } else {
-    elements.feedback.textContent = "Clave incorrecta.";
-    setTimeout(() => {
-      elements.feedback.textContent =
-        "Las contraseñas y respuestas están ocultas por seguridad. Para verlas, escriba la clave correcta.";
-    }, 2000);
-    elements.masterKey.select();
-  }
-}
 
 // Función para limpiar modales (global)
 function limpiarModales() {
