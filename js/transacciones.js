@@ -173,7 +173,7 @@ const transacciones = {
       
       // 1. Primero verificar que podemos acceder al repositorio
       const testResponse = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
+        `https://api.github.com/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
         {
           headers: {
             'Authorization': `Bearer ${tokenLimpio}`,
@@ -193,7 +193,7 @@ const transacciones = {
 
       // 2. Obtener el archivo actual
       const getResponse = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+        `https://api.github.com/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
         {
           headers: {
             'Authorization': `Bearer ${tokenLimpio}`,
