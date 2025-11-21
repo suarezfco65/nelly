@@ -1,46 +1,130 @@
 {
   "transacciones": [
     {
-      "fecha": "2025-11-21",
+      "fecha": "2025-11-20",
+      "descripcion": "Compra farmatodo",
+      "ingreso": 0,
+      "egreso": 30400,
+      "saldo": 6190
+    },
+    {
+      "fecha": "2025-11-17",
+      "descripcion": "Ingreso Mercantil",
+      "ingreso": 20700,
+      "egreso": 0,
+      "saldo": 38590
+    },
+    {
+      "fecha": "2025-11-17",
+      "descripcion": "Envio dinero Ana Maria",
+      "ingreso": 0,
+      "egreso": 2160,
+      "saldo": 17890
+    },
+    {
+      "fecha": "2025-11-17",
       "descripcion": "Ingreso Bancaribe",
-      "ingreso": 7600,
+      "ingreso": 16200,
       "egreso": 0,
-      "saldo": 10449.5
+      "saldo": 20050
     },
     {
-      "fecha": "2024-01-15",
-      "descripcion": "Pago de servicios",
+      "fecha": "2025-11-04",
+      "descripcion": "Envio de Pañales",
       "ingreso": 0,
-      "egreso": 150.5,
-      "saldo": 2849.5
-    },
-    {
-      "fecha": "2024-01-14",
-      "descripcion": "Depósito bancario",
-      "ingreso": 3000,
       "egreso": 0,
-      "saldo": 3000
-    },
+      "saldo": 1850
+    },    
     {
-      "fecha": "2024-01-13",
-      "descripcion": "Compra supermercado",
+      "fecha": "2025-10-17",
+      "descripcion": "Envio dinero Ana Maria",
       "ingreso": 0,
-      "egreso": 250.75,
-      "saldo": 0
+      "egreso": 3000,
+      "saldo": 1850
     },
     {
-      "fecha": "2024-01-12",
-      "descripcion": "Transferencia recibida",
-      "ingreso": 500,
+      "fecha": "2025-10-17",
+      "descripcion": "Envio dinero Ana Maria",
+      "ingreso": 0,
+      "egreso": 2050,
+      "saldo": 4850
+    },
+    {
+      "fecha": "2025-10-14",
+      "descripcion": "Compra farmatodo",
+      "ingreso": 0,
+      "egreso": 11000,
+      "saldo": 6900
+    },
+    {
+      "fecha": "2025-10-08",
+      "descripcion": "Ingreso Bancaribe",
+      "ingreso": 6350,
       "egreso": 0,
-      "saldo": 250.75
+      "saldo": 17900
     },
     {
-      "fecha": "2024-01-11",
-      "descripcion": "Pago de internet",
+      "fecha": "2025-10-08",
+      "descripcion": "Compra farmatodo",
       "ingreso": 0,
-      "egreso": 45.25,
-      "saldo": -249.25
+      "egreso": 7081,
+      "saldo": 11557
+    },
+    {
+      "fecha": "2025-09-29",
+      "descripcion": "Envio dinero Ana Maria",
+      "ingreso": 0,
+      "egreso": 1709,
+      "saldo": 18649
+    },
+     {
+      "fecha": "2025-09-18",
+      "descripcion": "Ingreso Mercantil",
+      "ingreso": 17700,
+      "egreso": 0,
+      "saldo": 20409
+    },
+   {
+      "fecha": "2025-09-17",
+      "descripcion": "Compra Pañales",
+      "ingreso": 0,
+      "egreso": 13000,
+      "saldo": 2709
+    },
+    {
+      "fecha": "2025-09-15",
+      "descripcion": "Envio dinero Ana Maria",
+      "ingreso": 0,
+      "egreso": 1610,
+      "saldo": 15709
+    },
+    {
+      "fecha": "2025-09-15",
+      "descripcion": "Ingreso Bancaribe",
+      "ingreso": 11000,
+      "egreso": 0,
+      "saldo": 17319
+    },
+    {
+      "fecha": "2025-09-06",
+      "descripcion": "Compra farmatodo",
+      "ingreso": 0,
+      "egreso": 12661,
+      "saldo": 6319
+    },
+    {
+      "fecha": "2025-09-01",
+      "descripcion": "Ingreso Bancaribe",
+      "ingreso": 5500,
+      "egreso": 0,
+      "saldo": 18980
+    },
+    {
+      "fecha": "2025-08-30",
+      "descripcion": "Saldo de Inicio",
+      "ingreso": 13480,
+      "egreso": 0,
+      "saldo": 13480
     }
   ]
 }
