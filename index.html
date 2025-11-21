@@ -5,15 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nelly Quiroz - Información</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-      .sensitive { letter-spacing: 0.2em; }
-      .masked { color: #000; background: #e9ecef; padding: .25rem .5rem; border-radius: .25rem; }
-      .small-dot { font-family: monospace; }
-
-      /* layout tweaks for modals with iframe */
-      .doc-iframe { width: 100%; height: 75vh; border: 0; }
-      .modal-xl .modal-dialog { max-width: 1200px; }
-    </style>
+    <link href="css/styles.css" rel="stylesheet">
   </head>
   <body class="bg-light">
     <div class="container py-5">
@@ -26,48 +18,34 @@
             <div class="card-body">
 
               <!-- Nav tabs -->
-              <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                  <button class="nav-link active" id="datos-tab" data-bs-toggle="tab" data-bs-target="#datos" type="button" role="tab" aria-controls="datos" aria-selected="true">Datos Básicos</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab" aria-controls="docs" aria-selected="false">Documentos</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button class="nav-link" id="compras-tab" data-bs-toggle="tab" data-bs-target="#compras" type="button" role="tab" aria-controls="compras" aria-selected="false">Compras</button>
-                </li>
-              </ul>
+<ul class="nav nav-tabs" id="mainTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="datos-tab" data-bs-toggle="tab" data-bs-target="#datos" type="button" role="tab" aria-controls="datos" aria-selected="true">Datos Básicos</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab" aria-controls="docs" aria-selected="false">Documentos</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="compras-tab" data-bs-toggle="tab" data-bs-target="#compras" type="button" role="tab" aria-controls="compras" aria-selected="false">Compras</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="transacciones-tab" data-bs-toggle="tab" data-bs-target="#transacciones" type="button" role="tab" aria-controls="transacciones" aria-selected="false">Transacciones</button>
+  </li>
+</ul>
 
               <div class="tab-content mt-4" id="mainTabsContent">
 
                 <!-- Tab 1: Datos Básicos -->
                 <div class="tab-pane fade show active" id="datos" role="tabpanel" aria-labelledby="datos-tab">
-                  <p class="mb-1"><strong>Nombre:</strong> Nelly Quiroz</p>
-                  <p class="mb-3"><strong>Cédula de Identidad:</strong> 6251509</p>
-
-                  <hr />
-
-                  <h5>Acceso a sistema Patria</h5>
-                  <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="febrero17">••••••••</span></p>
-
-                  <h5 class="mt-4">Acceso Bancaribe</h5>
-                  <p><strong>Usuario:</strong> nellycq17</p>
-                  <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
-
-                  <h5 class="mt-4">Acceso Banco Mercantil</h5>
-                  <p><strong>Usuario:</strong> nellycq6</p>
-                  <p><strong>Contraseña:</strong> <span class="masked sensitive" data-value="Malu175.">••••••••</span></p>
-
-                  <hr />
-
-                  <h5>Preguntas de seguridad (respuestas en minúsculas)</h5>
-                  <ul>
-                    <li>¿Segundo nombre de su hijo? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
-                    <li>¿Segundo nombre de su madre? <strong class="masked sensitive" data-value="jesus">•••••</strong></li>
-                    <li>¿En qué ciudad nació su madre? <strong class="masked sensitive" data-value="caracas">••••••</strong></li>
-                    <li>¿Fecha de nacimiento de su hijo mayor? <strong class="masked sensitive" data-value="enero16">•••••</strong></li>
-                    <li>¿Donde nació su hijo? <strong class="masked sensitive" data-value="santiago de leon">••••••••••••••</strong></li>
-                  </ul>
+                  <div id="datosContent">
+                    <!-- Los datos se cargarán aquí dinámicamente -->
+                    <div class="text-center py-4">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando datos...</span>
+                      </div>
+                      <p class="mt-2">Cargando información...</p>
+                    </div>
+                  </div>
 
                   <div class="mt-4">
                     <label for="masterKey" class="form-label">Ingrese la clave para revelar contraseñas y respuestas de seguridad</label>
@@ -84,7 +62,6 @@
                   <p class="mb-2">Lista de documentos almacenados en la carpeta <code>docs/</code>. Haga clic en cualquiera para visualizarlo en un modal.</p>
 
                   <ul class="list-group" id="documentsList">
-                    <!-- Actualizado: archivos encontrados en docs/ -->
                     <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/Mi Conexión Bancaribe - Personas .pdf" role="button">
                       Mi Conexión Bancaribe - Personas .pdf
                       <span class="badge bg-secondary">PDF</span>
@@ -109,7 +86,6 @@
                       tarjeta bancaribe dorso.jpeg
                       <span class="badge bg-secondary">IMG</span>
                     </li>
-                    <!-- Se incluye index.html porque existe dentro de docs/ (puede omitirse si no interesa mostrarlo) -->
                     <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/index.html" role="button">
                       docs/index.html
                       <span class="badge bg-secondary">HTML</span>
@@ -126,7 +102,6 @@
                   <p class="mb-2">Archivos de compras en la carpeta <code>compras/</code>. Se abrirán en un modal XL para mejor visualización.</p>
 
                   <ul class="list-group" id="comprasList">
-                    <!-- Actualizado: archivos encontrados en compras/ -->
                     <li class="list-group-item d-flex justify-content-between align-items-center compra-item" data-file="compras/farmatodo_20Nov2025.html" role="button">
                       farmatodo_20Nov2025.html
                       <span class="badge bg-secondary">HTML</span>
@@ -135,6 +110,63 @@
 
                   <div class="mt-3 text-muted small">
                     Nota: si agrega más archivos en la carpeta <code>compras/</code>, coloquelos en la misma carpeta pública y añada una entrada en la lista o implemente carga dinámica desde el servidor.
+                  </div>
+                </div>
+
+                <!-- Tab 4: Transacciones -->
+                <div class="tab-pane fade" id="transacciones" role="tabpanel" aria-labelledby="transacciones-tab">
+                  <div id="transaccionesContent">
+                    <div class="text-center py-4">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando transacciones...</span>
+                      </div>
+                      <p class="mt-2">Cargando transacciones...</p>
+                    </div>
+                  </div>
+
+                  <!-- Formulario para agregar transacciones (inicialmente oculto) -->
+                  <div id="formTransaccion" class="mt-4" style="display: none;">
+                    <hr>
+                    <h5>Agregar Nueva Transacción</h5>
+                    <form id="nuevaTransaccionForm">
+                      <div class="row">
+                        <div class="col-md-3">
+                          <label for="fecha" class="form-label">Fecha</label>
+                          <input type="date" class="form-control" id="fecha" required>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="descripcion" class="form-label">Descripción</label>
+                          <input type="text" class="form-control" id="descripcion" required>
+                        </div>
+                        <div class="col-md-3">
+                          <label for="tipo" class="form-label">Tipo</label>
+                          <select class="form-select" id="tipo" required>
+                            <option value="ingreso">Ingreso</option>
+                            <option value="egreso">Egreso</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="row mt-2">
+                        <div class="col-md-6">
+                          <label for="monto" class="form-label">Monto (Bs)</label>
+                          <input type="number" step="0.01" class="form-control" id="monto" required>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="claveTransaccion" class="form-label">Clave para guardar</label>
+                          <input type="password" class="form-control" id="claveTransaccion" required>
+                        </div>
+                      </div>
+                      <div class="mt-3">
+                        <button type="submit" class="btn btn-success">Agregar Transacción</button>
+                        <button type="button" id="cancelarTransaccion" class="btn btn-secondary">Cancelar</button>
+                      </div>
+                    </form>
+                    <div id="feedbackTransaccion" class="mt-2"></div>
+                  </div>
+
+                  <!-- Botón para mostrar formulario -->
+                  <div class="mt-3">
+                    <button id="mostrarFormTransaccion" class="btn btn-primary">Agregar Nueva Transacción</button>
                   </div>
                 </div>
 
@@ -148,7 +180,7 @@
       </div>
     </div>
 
-    <!-- Modal para documentos (tamaño por defecto) -->
+    <!-- Modal para documentos -->
     <div class="modal fade" id="docModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -157,7 +189,13 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body p-0">
-            <iframe id="docIframe" class="doc-iframe" src=""></iframe>
+            <div id="docContent" class="doc-content">
+              <iframe id="docIframe" class="doc-iframe" src=""></iframe>
+              <img id="docImage" class="doc-image" src="" alt="" style="display: none;">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <small class="text-muted">Las imágenes se ajustan automáticamente al tamaño del modal</small>
           </div>
         </div>
       </div>
@@ -178,80 +216,11 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-      (function(){
-        // Nota: esta clave queda en el código cliente y NO es segura contra usuarios que inspeccionen el HTML/JS.
-        // Clave para revelar: Ncq123
-        const KEY = 'Ncq123';
-        const btn = document.getElementById('unmaskBtn');
-        const input = document.getElementById('masterKey');
-        const feedback = document.getElementById('feedback');
-
-        function reveal() {
-          const v = (input.value || '').trim();
-          if (v === KEY) {
-            document.querySelectorAll('.sensitive').forEach(el => {
-              const val = el.getAttribute('data-value');
-              if (val !== null) {
-                el.textContent = val;
-                el.classList.remove('masked');
-              }
-            });
-            feedback.textContent = 'Información revelada.';
-            input.value = '';
-          } else {
-            feedback.textContent = 'Clave incorrecta.';
-            setTimeout(() => {
-              feedback.textContent = 'Las contraseñas y respuestas están ocultas por seguridad. Para verlas, escriba la clave correcta.';
-            }, 2000);
-            input.select();
-          }
-        }
-
-        btn.addEventListener('click', reveal);
-        input.addEventListener('keyup', function(e){ if (e.key === 'Enter') reveal(); });
-
-        // Documentos: abrir en modal (se usa encodeURI para manejar espacios/acentos)
-        const docModalEl = document.getElementById('docModal');
-        const docModal = new bootstrap.Modal(docModalEl);
-        const docIframe = document.getElementById('docIframe');
-        const docModalTitle = document.getElementById('docModalTitle');
-
-        document.querySelectorAll('.doc-item').forEach(li => {
-          li.addEventListener('click', () => {
-            const file = li.getAttribute('data-file');
-            docIframe.src = encodeURI(file);
-            docModalTitle.textContent = li.textContent.trim();
-            docModal.show();
-          });
-        });
-
-        docModalEl.addEventListener('hidden.bs.modal', () => {
-          // limpiar src para liberar memoria
-          docIframe.src = '';
-        });
-
-        // Compras: abrir en modal XL (encodeURI aplicado)
-        const compraModalEl = document.getElementById('compraModal');
-        const compraModal = new bootstrap.Modal(compraModalEl);
-        const compraIframe = document.getElementById('compraIframe');
-        const compraModalTitle = document.getElementById('compraModalTitle');
-
-        document.querySelectorAll('.compra-item').forEach(li => {
-          li.addEventListener('click', () => {
-            const file = li.getAttribute('data-file');
-            compraIframe.src = encodeURI(file);
-            compraModalTitle.textContent = li.textContent.trim();
-            compraModal.show();
-          });
-        });
-
-        compraModalEl.addEventListener('hidden.bs.modal', () => {
-          compraIframe.src = '';
-        });
-
-      })();
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/datos-basicos.js"></script>
+<script src="js/documentos.js"></script>
+<script src="js/compras.js"></script>
+<script src="js/transacciones.js"></script> <!-- ← Agregar esta línea -->
+<script src="js/app.js"></script>
   </body>
 </html>
