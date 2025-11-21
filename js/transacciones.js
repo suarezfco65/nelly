@@ -7,8 +7,6 @@ const transacciones = {
     FILE_PATH: 'json/transacciones.json'
   },
 
-    PROXY_URL: '/api/proxy.js', // Ruta relativa al proxy en GitHub Pages
-
   // Función para cargar transacciones desde JSON
   async cargarTransacciones() {
     try {
@@ -138,7 +136,7 @@ const transacciones = {
     try {
       feedback.innerHTML = '<div class="alert alert-info">Guardando transacción en GitHub...</div>';
       
-      // Usar la función real de GitHub
+      // Usar la función de GitHub
       await this.guardarEnGitHub(nuevaTransaccion, githubToken);
       
       feedback.innerHTML = `
@@ -164,54 +162,51 @@ const transacciones = {
     }
   },
 
-  // Función para llamar al proxy
-  async llamarProxy(accion, datos = {}, githubToken) {
+  // Función para llamar a la API de GitHub
+  async llamarGitHubAPI(url, options = {}) {
     try {
-      const response = await fetch(this.PROXY_URL, {
-        method: 'POST',
+      const response = await fetch(url, {
+        ...options,
         headers: {
+          'Authorization': `Bearer ${options.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28',
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          githubToken: githubToken,
-          action: accion,
-          data: datos
-        })
+          ...options.headers
+        }
       });
 
       if (!response.ok) {
-        throw new Error(`Error del proxy: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`GitHub API Error: ${response.status} - ${errorData.message}`);
       }
 
-      const resultado = await response.json();
-      
-      if (!resultado.ok) {
-        throw new Error(`Error de GitHub: ${resultado.status} - ${resultado.data.message}`);
-      }
-      
-      return resultado.data;
-      
+      return await response.json();
     } catch (error) {
-      console.error('Error en llamarProxy:', error);
+      console.error('Error en llamarGitHubAPI:', error);
       throw error;
     }
   },
 
-  // Función actualizada para guardar en GitHub usando proxy
+  // Función para guardar en GitHub (versión simplificada)
   async guardarEnGitHub(nuevaTransaccion, githubToken) {
     try {
-      console.log('Iniciando guardado en GitHub via proxy...');
+      console.log('Iniciando guardado en GitHub...');
       
       const tokenLimpio = githubToken.trim();
       
-      // 1. Verificar que podemos acceder al repositorio
-      await this.llamarProxy('testRepo', {}, tokenLimpio);
-      console.log('✓ Acceso al repositorio verificado');
+      // Verificar formato del token
+      if (!tokenLimpio.startsWith('github_pat_')) {
+        throw new Error('Formato de token incorrecto. Debe ser un Fine-Grained Token que empiece con "github_pat_"');
+      }
 
-      // 2. Obtener el archivo actual (o crear uno nuevo si no existe)
+      // 1. Obtener el archivo actual
       let fileData;
       try {
-        fileData = await this.llamarProxy('getFile', {}, tokenLimpio);
+        fileData = await this.llamarGitHubAPI(
+          `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+          { token: tokenLimpio }
+        );
         console.log('✓ Archivo actual obtenido');
       } catch (error) {
         if (error.message.includes('404')) {
@@ -221,7 +216,7 @@ const transacciones = {
         throw error;
       }
       
-      // 3. Actualizar el contenido
+      // 2. Actualizar el contenido
       const contenidoActual = JSON.parse(atob(fileData.content));
       
       // Calcular el nuevo saldo
@@ -236,7 +231,7 @@ const transacciones = {
       // Agregar la nueva transacción al inicio
       contenidoActual.transacciones.unshift(nuevaTransaccion);
       
-      // 4. Actualizar el archivo en GitHub
+      // 3. Actualizar el archivo en GitHub
       const datosActualizacion = {
         message: `Agregar transacción: ${nuevaTransaccion.descripcion}`,
         content: btoa(JSON.stringify(contenidoActual, null, 2)),
@@ -244,18 +239,37 @@ const transacciones = {
         branch: this.GITHUB_CONFIG.BRANCH
       };
       
-      await this.llamarProxy('updateFile', datosActualizacion, tokenLimpio);
-      console.log('✓ Archivo actualizado exitosamente');
+      await this.llamarGitHubAPI(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+        {
+          token: tokenLimpio,
+          method: 'PUT',
+          body: JSON.stringify(datosActualizacion)
+        }
+      );
       
+      console.log('✓ Archivo actualizado exitosamente');
       return { success: true };
       
     } catch (error) {
       console.error('Error completo en guardarEnGitHub:', error);
-      throw new Error(`Error al guardar en GitHub: ${error.message}`);
+      
+      // Mensajes de error más específicos
+      if (error.message.includes('401')) {
+        throw new Error('Token inválido o expirado. Verifique las credenciales.');
+      } else if (error.message.includes('403')) {
+        throw new Error('Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".');
+      } else if (error.message.includes('404')) {
+        throw new Error('Repositorio no encontrado. Verifique que "suarezfco/nelly" exista.');
+      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        throw new Error('Error de conexión. Verifique su conexión a internet o problemas de CORS.');
+      } else {
+        throw new Error(`Error al guardar en GitHub: ${error.message}`);
+      }
     }
   },
 
-  // Función actualizada para crear nuevo archivo
+  // Función para crear nuevo archivo si no existe
   async crearNuevoArchivo(nuevaTransaccion, githubToken) {
     try {
       // Calcular saldo inicial
@@ -273,9 +287,16 @@ const transacciones = {
         branch: this.GITHUB_CONFIG.BRANCH
       };
       
-      await this.llamarProxy('updateFile', datosCreacion, githubToken);
-      console.log('✓ Nuevo archivo creado exitosamente');
+      await this.llamarGitHubAPI(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+        {
+          token: githubToken,
+          method: 'PUT',
+          body: JSON.stringify(datosCreacion)
+        }
+      );
       
+      console.log('✓ Nuevo archivo creado exitosamente');
       return { success: true };
       
     } catch (error) {
@@ -284,53 +305,128 @@ const transacciones = {
     }
   },
 
-  // Función de diagnóstico actualizada
+  // Función de diagnóstico mejorada
   async diagnosticarToken(githubToken) {
     try {
-      console.log('🔍 DIAGNÓSTICO COMPLETO DEL TOKEN (via proxy)');
+      console.log('🔍 DIAGNÓSTICO COMPLETO DEL TOKEN');
       
       const tokenLimpio = githubToken.trim();
       console.log('📝 Token (primeros 8 chars):', tokenLimpio.substring(0, 8) + '...');
+      console.log('📝 Longitud del token:', tokenLimpio.length);
       
-      // Verificar formato
+      // Verificar formato del token (debe empezar con github_pat_)
       if (!tokenLimpio.startsWith('github_pat_')) {
-        console.error('❌ FORMATO INCORRECTO');
-        return false;
+        console.error('❌ FORMATO INCORRECTO: Los Fine-Grained Tokens deben empezar con "github_pat_"');
+        console.log('💡 El token proporcionado:', tokenLimpio.substring(0, 20) + '...');
+        return {
+          success: false,
+          error: 'Formato de token incorrecto. Debe empezar con "github_pat_"'
+        };
       }
       
       console.log('✅ Formato del token correcto');
       
-      // Probar acceso al repositorio via proxy
+      // Probar acceso al repositorio
       console.log('🔗 Probando acceso al repositorio...');
-      const repoData = await this.llamarProxy('testRepo', {}, tokenLimpio);
-      console.log('✅ REPOSITORIO ACCESIBLE:', repoData.full_name);
+      const repoResponse = await this.llamarGitHubAPI(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
+        { token: tokenLimpio }
+      );
+      
+      console.log('✅ REPOSITORIO ACCESIBLE:', repoResponse.full_name);
+      console.log('📁 Visibilidad:', repoResponse.visibility);
+      console.log('🔒 Privado:', repoResponse.private);
       
       // Probar acceso al archivo
       console.log('📋 Verificando archivo de transacciones...');
       try {
-        const fileData = await this.llamarProxy('getFile', {}, tokenLimpio);
+        const fileData = await this.llamarGitHubAPI(
+          `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+          { token: tokenLimpio }
+        );
         console.log('✅ transacciones.json existe y es accesible');
+        console.log('📊 Número de transacciones:', fileData.transacciones ? fileData.transacciones.length : 'N/A');
       } catch (error) {
         if (error.message.includes('404')) {
           console.log('ℹ️ transacciones.json no existe (se creará automáticamente)');
         } else {
-          throw error;
+          console.error('❌ Error accediendo al archivo:', error.message);
+          return {
+            success: false,
+            error: `Error accediendo al archivo: ${error.message}`
+          };
         }
       }
       
       console.log('🎉 DIAGNÓSTICO COMPLETADO - Token funciona correctamente');
-      return true;
+      return {
+        success: true,
+        message: 'Token funciona correctamente'
+      };
       
     } catch (error) {
       console.error('💥 ERROR EN DIAGNÓSTICO:', error);
-      return false;
+      
+      let mensajeError = 'Error desconocido';
+      if (error.message.includes('401')) {
+        mensajeError = 'Token inválido o expirado. Verifique las credenciales.';
+      } else if (error.message.includes('403')) {
+        mensajeError = 'Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".';
+      } else if (error.message.includes('404')) {
+        mensajeError = 'Repositorio no encontrado. Verifique que "suarezfco/nelly" exista.';
+      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        mensajeError = 'Error de conexión o CORS. Verifique su conexión a internet.';
+      } else {
+        mensajeError = error.message;
+      }
+      
+      return {
+        success: false,
+        error: mensajeError
+      };
     }
   },
-  
+
+  // Función simple para probar token desde consola
+  async probarTokenSimple(githubToken) {
+    const resultado = await this.diagnosticarToken(githubToken);
+    if (resultado.success) {
+      alert('✅ Token funciona correctamente');
+    } else {
+      alert('❌ ' + resultado.error);
+    }
+    return resultado.success;
+  },
+
+  // Función para inicializar eventos
+  inicializarEventos() {
+    // Botón para mostrar/ocultar formulario
+    document.getElementById('mostrarFormTransaccion').addEventListener('click', () => {
+      this.toggleFormulario();
+    });
+    
+    // Botón cancelar
+    document.getElementById('cancelarTransaccion').addEventListener('click', () => {
+      this.toggleFormulario();
+    });
+    
+    // Formulario de envío
+    document.getElementById('nuevaTransaccionForm').addEventListener('submit', (e) => {
+      this.manejarEnvioFormulario(e);
+    });
+  },
+
   // Inicializar pestaña de transacciones
   inicializar() {
     this.inicializarEventos();
     this.cargarTransacciones();
     console.log('Pestaña "Transacciones" inicializada');
+    
+    // Exponer funciones para debugging
+    window.transaccionesDebug = {
+      diagnosticarToken: (token) => this.diagnosticarToken(token),
+      probarTokenSimple: (token) => this.probarTokenSimple(token),
+      guardarEnGitHub: (transaccion, token) => this.guardarEnGitHub(transaccion, token)
+    };
   }
 };
