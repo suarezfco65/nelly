@@ -1,7 +1,7 @@
 const transacciones = {
   // Configuración para GitHub con Fine-Grained Token
   GITHUB_CONFIG: {
-    OWNER: 'suarezfco65',
+    OWNER: 'suarezfco',
     REPO: 'nelly',
     BRANCH: 'main',
     FILE_PATH: 'json/transacciones.json'
@@ -86,6 +86,8 @@ const transacciones = {
       boton.textContent = 'Ocultar Formulario';
       // Establecer fecha actual por defecto
       document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+      // Enfocar el campo de descripción
+      document.getElementById('descripcion').focus();
     } else {
       form.style.display = 'none';
       boton.textContent = 'Agregar Nueva Transacción';
@@ -99,7 +101,7 @@ const transacciones = {
     document.getElementById('feedbackTransaccion').innerHTML = '';
   },
 
-  // Función para manejar envío del formulario
+  // Función para manejar envío del formulario (SIN CLAVE)
   async manejarEnvioFormulario(event) {
     event.preventDefault();
     
@@ -107,18 +109,27 @@ const transacciones = {
     const descripcion = document.getElementById('descripcion').value;
     const tipo = document.getElementById('tipo').value;
     const monto = parseFloat(document.getElementById('monto').value);
-    const clave = document.getElementById('claveTransaccion').value;
     
     const feedback = document.getElementById('feedbackTransaccion');
     
-    // Validar clave
-    if (clave !== CONFIG.KEY) {
-      feedback.innerHTML = '<div class="alert alert-danger">Clave incorrecta</div>';
+    // Validaciones básicas
+    if (!fecha) {
+      feedback.innerHTML = '<div class="alert alert-warning">La fecha es requerida</div>';
       return;
     }
     
-    // Solicitar token de GitHub
-    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub:');
+    if (!descripcion.trim()) {
+      feedback.innerHTML = '<div class="alert alert-warning">La descripción es requerida</div>';
+      return;
+    }
+    
+    if (!monto || monto <= 0) {
+      feedback.innerHTML = '<div class="alert alert-warning">El monto debe ser mayor a 0</div>';
+      return;
+    }
+    
+    // Solicitar token de GitHub (solo token, sin clave)
+    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para guardar la transacción:');
     if (!githubToken) {
       feedback.innerHTML = '<div class="alert alert-warning">Token requerido para guardar</div>';
       return;
@@ -127,7 +138,7 @@ const transacciones = {
     // Crear nueva transacción
     const nuevaTransaccion = {
       fecha: fecha,
-      descripcion: descripcion,
+      descripcion: descripcion.trim(),
       ingreso: tipo === 'ingreso' ? monto : 0,
       egreso: tipo === 'egreso' ? monto : 0,
       saldo: 0 // Se calculará en guardarEnGitHub
@@ -188,7 +199,7 @@ const transacciones = {
     }
   },
 
-  // Función para guardar en GitHub (versión simplificada)
+  // Función para guardar en GitHub
   async guardarEnGitHub(nuevaTransaccion, githubToken) {
     try {
       console.log('Iniciando guardado en GitHub...');
