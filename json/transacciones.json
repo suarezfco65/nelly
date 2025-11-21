@@ -1,6 +1,13 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-11-21",
+      "descripcion": "Ingreso Bancaribe",
+      "ingreso": 7600,
+      "egreso": 0,
+      "saldo": 10449.5
+    },
+    {
       "fecha": "2024-01-15",
       "descripcion": "Pago de servicios",
       "ingreso": 0,
