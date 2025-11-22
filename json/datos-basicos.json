@@ -1,5 +1,5 @@
 {
-  "nombre": "Nelly del C. Quiroz",
+  "nombre": "Nelly Quiroz",
   "cedula": "6251509",
   "accesos": {
     "patria": {
@@ -17,23 +17,23 @@
   },
   "preguntasSeguridad": [
     {
-      "pregunta": "¿Segundo nombre de su hijo?",
+      "pregunta": "Â¿Segundo nombre de su hijo?",
       "respuesta": "jesus"
     },
     {
-      "pregunta": "¿Segundo nombre de su madre?",
+      "pregunta": "Â¿Segundo nombre de su madre?",
       "respuesta": "jesus"
     },
     {
-      "pregunta": "¿En qué ciudad nació su madre?",
+      "pregunta": "Â¿En quÃ© ciudad naciÃ³ su madre?",
       "respuesta": "caracas"
     },
     {
-      "pregunta": "¿Fecha de nacimiento de su hijo mayor?",
+      "pregunta": "Â¿Fecha de nacimiento de su hijo mayor?",
       "respuesta": "enero16"
     },
     {
-      "pregunta": "¿Donde nació su hijo?",
+      "pregunta": "Â¿Donde naciÃ³ su hijo?",
       "respuesta": "santiago de leon"
     }
   ]
