@@ -61,7 +61,7 @@ const transacciones = {
               </tr>
             `).join('')}
           </tbody>
-          ${this.generarTotales(ultimasTransacciones)}
+          <!-- Totales eliminados -->
         </table>
       </div>
       <div class="mt-2 text-muted">
@@ -74,26 +74,6 @@ const transacciones = {
     
     // Actualizar estado del botón basado en si tenemos token
     this.actualizarEstadoBoton();
-  },
-
-  // Función para generar fila de totales
-  generarTotales(transacciones) {
-    const totalIngresos = transacciones.reduce((sum, trans) => sum + trans.ingreso, 0);
-    const totalEgresos = transacciones.reduce((sum, trans) => sum + trans.egreso, 0);
-    const saldoActual = transacciones.length > 0 ? transacciones[0].saldo : 0;
-
-    return `
-      <tfoot class="table-secondary">
-        <tr>
-          <th colspan="2" class="text-end">Totales:</th>
-          <th class="text-end text-success">${totalIngresos > 0 ? this.formatoNumero.format(totalIngresos) : '-'}</th>
-          <th class="text-end text-danger">${totalEgresos > 0 ? this.formatoNumero.format(totalEgresos) : '-'}</th>
-          <th class="text-end fw-bold ${saldoActual >= 0 ? 'text-success' : 'text-danger'}">
-            ${this.formatoNumero.format(saldoActual)}
-          </th>
-        </tr>
-      </tfoot>
-    `;
   },
 
   // Función para formatear fecha
