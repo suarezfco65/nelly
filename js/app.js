@@ -29,9 +29,7 @@ const state = {
 };
 
 // Función para inicializar eventos globales
-function inicializarEventosGlobales() {
-}
-
+function inicializarEventosGlobales() {}
 
 // Función para limpiar modales (global)
 function limpiarModales() {
