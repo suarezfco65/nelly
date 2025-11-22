@@ -27,8 +27,6 @@ mostrarTransacciones(transacciones) {
   const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
   
   const formatoMoneda = new Intl.NumberFormat('es-VE', {
-    style: 'currency',
-    currency: 'VES',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
