@@ -1,11 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nelly Quiroz - Información</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/styles.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link href="css/styles.css" rel="stylesheet" />
   </head>
   <body class="bg-light">
     <div class="container py-5">
@@ -16,160 +19,302 @@
               <h4 class="mb-0">Información de Nelly Quiroz</h4>
             </div>
             <div class="card-body">
-
               <!-- Nav tabs -->
-<ul class="nav nav-tabs" id="mainTabs" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="datos-tab" data-bs-toggle="tab" data-bs-target="#datos" type="button" role="tab" aria-controls="datos" aria-selected="true">Datos Básicos</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab" aria-controls="docs" aria-selected="false">Documentos</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="compras-tab" data-bs-toggle="tab" data-bs-target="#compras" type="button" role="tab" aria-controls="compras" aria-selected="false">Compras</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="transacciones-tab" data-bs-toggle="tab" data-bs-target="#transacciones" type="button" role="tab" aria-controls="transacciones" aria-selected="false">Transacciones</button>
-  </li>
-</ul>
+              <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link active"
+                    id="datos-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#datos"
+                    type="button"
+                    role="tab"
+                    aria-controls="datos"
+                    aria-selected="true"
+                  >
+                    Datos Básicos
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="docs-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#docs"
+                    type="button"
+                    role="tab"
+                    aria-controls="docs"
+                    aria-selected="false"
+                  >
+                    Documentos
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="compras-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#compras"
+                    type="button"
+                    role="tab"
+                    aria-controls="compras"
+                    aria-selected="false"
+                  >
+                    Compras
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="transacciones-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#transacciones"
+                    type="button"
+                    role="tab"
+                    aria-controls="transacciones"
+                    aria-selected="false"
+                  >
+                    Transacciones
+                  </button>
+                </li>
+              </ul>
 
               <div class="tab-content mt-4" id="mainTabsContent">
+                <!-- Tab 1: Datos Básicos -->
+                <div
+                  class="tab-pane fade show active"
+                  id="datos"
+                  role="tabpanel"
+                  aria-labelledby="datos-tab"
+                >
+                  <div id="datosContent">
+                    <!-- Los datos se cargarán aquí dinámicamente -->
+                    <div class="text-center py-4">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando datos...</span>
+                      </div>
+                      <p class="mt-2">Cargando información...</p>
+                    </div>
+                  </div>
 
-<!-- Tab 1: Datos Básicos -->
-<div class="tab-pane fade show active" id="datos" role="tabpanel" aria-labelledby="datos-tab">
-  <div id="datosContent">
-    <!-- Los datos se cargarán aquí dinámicamente -->
-    <div class="text-center py-4">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Cargando datos...</span>
-      </div>
-      <p class="mt-2">Cargando información...</p>
-    </div>
-  </div>
-
-  <!-- SE ELIMINÓ LA SECCIÓN DE CLAVE MAESTRA -->
-</div>
+                  <!-- SE ELIMINÓ LA SECCIÓN DE CLAVE MAESTRA -->
+                </div>
 
                 <!-- Tab 2: Documentos -->
-                <div class="tab-pane fade" id="docs" role="tabpanel" aria-labelledby="docs-tab">
-                  <p class="mb-2">Lista de documentos almacenados en la carpeta <code>docs/</code>. Haga clic en cualquiera para visualizarlo en un modal.</p>
+                <div
+                  class="tab-pane fade"
+                  id="docs"
+                  role="tabpanel"
+                  aria-labelledby="docs-tab"
+                >
+                  <p class="mb-2">
+                    Lista de documentos almacenados en la carpeta
+                    <code>docs/</code>. Haga clic en cualquiera para
+                    visualizarlo en un modal.
+                  </p>
 
                   <ul class="list-group" id="documentsList">
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/Mi Conexión Bancaribe - Personas .pdf" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/Mi Conexión Bancaribe - Personas .pdf"
+                      role="button"
+                    >
                       Mi Conexión Bancaribe - Personas .pdf
                       <span class="badge bg-secondary">PDF</span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/SENIAT.jpeg" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/SENIAT.jpeg"
+                      role="button"
+                    >
                       SENIAT.jpeg
                       <span class="badge bg-secondary">IMG</span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/rif.pdf" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/rif.pdf"
+                      role="button"
+                    >
                       rif.pdf
                       <span class="badge bg-secondary">PDF</span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/rif.png" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/rif.png"
+                      role="button"
+                    >
                       rif.png
                       <span class="badge bg-secondary">IMG</span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/tarjeta bancaribe frente.jpeg" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/tarjeta bancaribe frente.jpeg"
+                      role="button"
+                    >
                       tarjeta bancaribe frente.jpeg
                       <span class="badge bg-secondary">IMG</span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/tarjeta bancaribe dorso.jpeg" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/tarjeta bancaribe dorso.jpeg"
+                      role="button"
+                    >
                       tarjeta bancaribe dorso.jpeg
                       <span class="badge bg-secondary">IMG</span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center doc-item" data-file="docs/index.html" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
+                      data-file="docs/index.html"
+                      role="button"
+                    >
                       docs/index.html
                       <span class="badge bg-secondary">HTML</span>
                     </li>
                   </ul>
 
                   <div class="mt-3 text-muted small">
-                    Nota: los nombres contienen espacios y caracteres especiales; el visor usa encodeURI al cargar el archivo para evitar errores.
+                    Nota: los nombres contienen espacios y caracteres
+                    especiales; el visor usa encodeURI al cargar el archivo para
+                    evitar errores.
                   </div>
                 </div>
 
                 <!-- Tab 3: Compras -->
-                <div class="tab-pane fade" id="compras" role="tabpanel" aria-labelledby="compras-tab">
-                  <p class="mb-2">Archivos de compras en la carpeta <code>compras/</code>. Se abrirán en un modal XL para mejor visualización.</p>
+                <div
+                  class="tab-pane fade"
+                  id="compras"
+                  role="tabpanel"
+                  aria-labelledby="compras-tab"
+                >
+                  <p class="mb-2">
+                    Archivos de compras en la carpeta <code>compras/</code>. Se
+                    abrirán en un modal XL para mejor visualización.
+                  </p>
 
                   <ul class="list-group" id="comprasList">
-                    <li class="list-group-item d-flex justify-content-between align-items-center compra-item" data-file="compras/farmatodo_20Nov2025.html" role="button">
+                    <li
+                      class="list-group-item d-flex justify-content-between align-items-center compra-item"
+                      data-file="compras/farmatodo_20Nov2025.html"
+                      role="button"
+                    >
                       farmatodo_20Nov2025.html
                       <span class="badge bg-secondary">HTML</span>
                     </li>
                   </ul>
 
                   <div class="mt-3 text-muted small">
-                    Nota: si agrega más archivos en la carpeta <code>compras/</code>, coloquelos en la misma carpeta pública y añada una entrada en la lista o implemente carga dinámica desde el servidor.
+                    Nota: si agrega más archivos en la carpeta
+                    <code>compras/</code>, coloquelos en la misma carpeta
+                    pública y añada una entrada en la lista o implemente carga
+                    dinámica desde el servidor.
                   </div>
                 </div>
 
-<!-- Tab 4: Transacciones -->
-<div class="tab-pane fade" id="transacciones" role="tabpanel" aria-labelledby="transacciones-tab">
-  <!-- Botón para mostrar formulario -->
-  <div class="mb-3">
-    <button id="mostrarFormTransaccion" class="btn btn-primary">Agregar Nueva Transacción</button>
-  </div>
+                <!-- Tab 4: Transacciones -->
+                <div
+                  class="tab-pane fade"
+                  id="transacciones"
+                  role="tabpanel"
+                  aria-labelledby="transacciones-tab"
+                >
+                  <!-- Botón para mostrar formulario -->
+                  <div class="mb-3">
+                    <button id="mostrarFormTransaccion" class="btn btn-primary">
+                      Agregar Nueva Transacción
+                    </button>
+                  </div>
 
-  <!-- Formulario para agregar transacciones (inicialmente oculto) -->
-  <div id="formTransaccion" class="mb-4" style="display: none;">
-    <div class="card">
-      <div class="card-header bg-primary text-white">
-        <h6 class="mb-0">Nueva Transacción</h6>
-      </div>
-      <div class="card-body">
-        <form id="nuevaTransaccionForm">
-          <div class="row">
-            <div class="col-md-3">
-              <label for="fecha" class="form-label">Fecha</label>
-              <input type="date" class="form-control" id="fecha" required>
+                  <!-- Formulario para agregar transacciones (inicialmente oculto) -->
+                  <div id="formTransaccion" class="mb-4" style="display: none">
+                    <div class="card">
+                      <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Nueva Transacción</h6>
+                      </div>
+                      <div class="card-body">
+                        <form id="nuevaTransaccionForm">
+                          <div class="row">
+                            <div class="col-md-3">
+                              <label for="fecha" class="form-label"
+                                >Fecha</label
+                              >
+                              <input
+                                type="date"
+                                class="form-control"
+                                id="fecha"
+                                required
+                              />
+                            </div>
+                            <div class="col-md-6">
+                              <label for="descripcion" class="form-label"
+                                >Descripción</label
+                              >
+                              <input
+                                type="text"
+                                class="form-control"
+                                id="descripcion"
+                                required
+                              />
+                            </div>
+                            <div class="col-md-3">
+                              <label for="tipo" class="form-label">Tipo</label>
+                              <select class="form-select" id="tipo" required>
+                                <option value="ingreso">Ingreso</option>
+                                <option value="egreso">Egreso</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="row mt-2">
+                            <div class="col-md-6">
+                              <label for="monto" class="form-label"
+                                >Monto (Bs)</label
+                              >
+                              <input
+                                type="number"
+                                step="0.01"
+                                class="form-control"
+                                id="monto"
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <button type="submit" class="btn btn-success">
+                              Agregar Transacción
+                            </button>
+                            <button
+                              type="button"
+                              id="cancelarTransaccion"
+                              class="btn btn-secondary"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+                        <div id="feedbackTransaccion" class="mt-2"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="transaccionesContent">
+                    <!-- Los datos se cargarán aquí dinámicamente -->
+                    <div class="text-center py-4">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden"
+                          >Cargando transacciones...</span
+                        >
+                      </div>
+                      <p class="mt-2">Cargando transacciones...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- tab-content -->
             </div>
-            <div class="col-md-6">
-              <label for="descripcion" class="form-label">Descripción</label>
-              <input type="text" class="form-control" id="descripcion" required>
+            <!-- card-body -->
+
+            <div class="card-footer text-muted small">
+              Proteja esta página y evite compartir la clave con terceros.
             </div>
-            <div class="col-md-3">
-              <label for="tipo" class="form-label">Tipo</label>
-              <select class="form-select" id="tipo" required>
-                <option value="ingreso">Ingreso</option>
-                <option value="egreso">Egreso</option>
-              </select>
-            </div>
-          </div>
-          <div class="row mt-2">
-            <div class="col-md-6">
-              <label for="monto" class="form-label">Monto (Bs)</label>
-              <input type="number" step="0.01" class="form-control" id="monto" required>
-            </div>
-          </div>
-          <div class="mt-3">
-            <button type="submit" class="btn btn-success">Agregar Transacción</button>
-            <button type="button" id="cancelarTransaccion" class="btn btn-secondary">Cancelar</button>
-          </div>
-        </form>
-        <div id="feedbackTransaccion" class="mt-2"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="transaccionesContent">
-    <!-- Los datos se cargarán aquí dinámicamente -->
-    <div class="text-center py-4">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Cargando transacciones...</span>
-      </div>
-      <p class="mt-2">Cargando transacciones...</p>
-    </div>
-  </div>
-</div>
-
-              </div> <!-- tab-content -->
-
-            </div> <!-- card-body -->
-
-            <div class="card-footer text-muted small">Proteja esta página y evite compartir la clave con terceros.</div>
           </div>
         </div>
       </div>
@@ -181,16 +326,30 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="docModalTitle">Documento</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
           </div>
           <div class="modal-body p-0">
             <div id="docContent" class="doc-content">
               <iframe id="docIframe" class="doc-iframe" src=""></iframe>
-              <img id="docImage" class="doc-image" src="" alt="" style="display: none;">
+              <img
+                id="docImage"
+                class="doc-image"
+                src=""
+                alt=""
+                style="display: none"
+              />
             </div>
           </div>
           <div class="modal-footer">
-            <small class="text-muted">Las imágenes se ajustan automáticamente al tamaño del modal</small>
+            <small class="text-muted"
+              >Las imágenes se ajustan automáticamente al tamaño del
+              modal</small
+            >
           </div>
         </div>
       </div>
@@ -202,7 +361,12 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="compraModalTitle">Compra</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
           </div>
           <div class="modal-body p-0">
             <iframe id="compraIframe" class="doc-iframe" src=""></iframe>
@@ -211,11 +375,12 @@
       </div>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/datos-basicos.js"></script>
-<script src="js/documentos.js"></script>
-<script src="js/compras.js"></script>
-<script src="js/transacciones.js"></script> <!-- ← Agregar esta línea -->
-<script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/datos-basicos.js"></script>
+    <script src="js/documentos.js"></script>
+    <script src="js/compras.js"></script>
+    <script src="js/transacciones.js"></script>
+    <!-- ← Agregar esta línea -->
+    <script src="js/app.js"></script>
   </body>
 </html>
