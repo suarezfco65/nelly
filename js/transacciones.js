@@ -7,6 +7,10 @@ const transacciones = {
     FILE_PATH: 'json/transacciones.json'
   },
 
+  // Estado de la aplicación
+  tokenActual: null,
+  transaccionesPendientes: [],
+
   // Función para cargar transacciones desde JSON
   async cargarTransacciones() {
     try {
@@ -23,47 +27,46 @@ const transacciones = {
   },
 
   // Función para mostrar transacciones en una tabla
-mostrarTransacciones(transacciones) {
-  const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
-  
-  const formatoMoneda = new Intl.NumberFormat('es-VE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-
-  const contenido = `
-    <div class="table-responsive">
-      <table class="table table-striped table-hover">
-        <thead class="table-dark">
-          <tr>
-            <th>Fecha</th>
-            <th>Descripción</th>
-            <th class="text-end">Ingreso (Bs)</th>
-            <th class="text-end">Egreso (Bs)</th>
-            <th class="text-end">Saldo (Bs)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${ultimasTransacciones.map(trans => `
+  mostrarTransacciones(transacciones) {
+    const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
+    
+    const contenido = `
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
             <tr>
-              <td>${this.formatearFecha(trans.fecha)}</td>
-              <td>${trans.descripcion}</td>
-              <td class="text-end text-success">${trans.ingreso > 0 ? formatoMoneda.format(trans.ingreso) : '-'}</td>
-              <td class="text-end text-danger">${trans.egreso > 0 ? formatoMoneda.format(trans.egreso) : '-'}</td>
-              <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
-                ${formatoMoneda.format(trans.saldo)}
-              </td>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th class="text-end">Ingreso (Bs)</th>
+              <th class="text-end">Egreso (Bs)</th>
+              <th class="text-end">Saldo (Bs)</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    <div class="mt-2 text-muted">
-      Mostrando las últimas ${ultimasTransacciones.length} transacciones
-    </div>
-  `;
-  document.getElementById('transaccionesContent').innerHTML = contenido;
-},
+          </thead>
+          <tbody>
+            ${ultimasTransacciones.map(trans => `
+              <tr>
+                <td>${this.formatearFecha(trans.fecha)}</td>
+                <td>${trans.descripcion}</td>
+                <td class="text-end text-success">${trans.ingreso > 0 ? trans.ingreso.toFixed(2) : '-'}</td>
+                <td class="text-end text-danger">${trans.egreso > 0 ? trans.egreso.toFixed(2) : '-'}</td>
+                <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
+                  ${trans.saldo.toFixed(2)}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-2 text-muted">
+        Mostrando las últimas ${ultimasTransacciones.length} transacciones
+      </div>
+    `;
+
+    document.getElementById('transaccionesContent').innerHTML = contenido;
+    
+    // Actualizar estado del botón basado en si tenemos token
+    this.actualizarEstadoBoton();
+  },
 
   // Función para formatear fecha
   formatearFecha(fechaString) {
@@ -80,22 +83,98 @@ mostrarTransacciones(transacciones) {
     `;
   },
 
+  // Función para actualizar estado del botón
+  actualizarEstadoBoton() {
+    const boton = document.getElementById('mostrarFormTransaccion');
+    if (this.tokenActual) {
+      boton.innerHTML = '<i class="bi bi-plus-circle"></i> Agregar Transacción (Token ✓)';
+      boton.className = 'btn btn-success';
+    } else {
+      boton.innerHTML = '<i class="bi bi-plus-circle"></i> Agregar Nueva Transacción';
+      boton.className = 'btn btn-primary';
+    }
+  },
+
   // Función para mostrar/ocultar formulario
   toggleFormulario() {
     const form = document.getElementById('formTransaccion');
     const boton = document.getElementById('mostrarFormTransaccion');
     
     if (form.style.display === 'none') {
+      // Si no tenemos token, solicitarlo antes de mostrar el formulario
+      if (!this.tokenActual) {
+        this.solicitarTokenInicial();
+        return;
+      }
+      
+      // Si tenemos token, mostrar formulario directamente
       form.style.display = 'block';
-      boton.textContent = 'Ocultar Formulario';
+      boton.innerHTML = '<i class="bi bi-dash-circle"></i> Ocultar Formulario';
       // Establecer fecha actual por defecto
       document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
       // Enfocar el campo de descripción
       document.getElementById('descripcion').focus();
     } else {
       form.style.display = 'none';
-      boton.textContent = 'Agregar Nueva Transacción';
+      this.actualizarEstadoBoton();
       this.limpiarFormulario();
+    }
+  },
+
+  // Función para solicitar token inicial
+  async solicitarTokenInicial() {
+    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para agregar transacciones:');
+    if (!githubToken) {
+      return;
+    }
+    
+    const feedback = document.getElementById('transaccionesContent');
+    
+    try {
+      // Mostrar mensaje de verificación
+      const contenidoOriginal = feedback.innerHTML;
+      feedback.innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Verificando token...</span>
+          </div>
+          <p class="mt-2">Verificando token de GitHub...</p>
+        </div>
+      `;
+      
+      // Verificar token
+      const tokenValido = await this.verificarToken(githubToken);
+      if (!tokenValido) {
+        throw new Error('Token inválido o sin permisos suficientes');
+      }
+      
+      // Guardar token
+      this.tokenActual = githubToken;
+      
+      // Restaurar contenido y mostrar formulario
+      this.mostrarTransacciones((await fetch('json/transacciones.json').then(r => r.json())).transacciones);
+      
+      // Mostrar mensaje de éxito
+      setTimeout(() => {
+        const alerta = document.createElement('div');
+        alerta.className = 'alert alert-success alert-dismissible fade show';
+        alerta.innerHTML = `
+          <strong>✓ Token verificado correctamente</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.getElementById('transaccionesContent').prepend(alerta);
+      }, 100);
+      
+      // Mostrar formulario
+      this.toggleFormulario();
+      
+    } catch (error) {
+      console.error('Error verificando token:', error);
+      this.mostrarError(`Error al verificar token: ${error.message}`);
+      // Recargar transacciones después de 3 segundos
+      setTimeout(() => {
+        this.cargarTransacciones();
+      }, 3000);
     }
   },
 
@@ -105,7 +184,7 @@ mostrarTransacciones(transacciones) {
     document.getElementById('feedbackTransaccion').innerHTML = '';
   },
 
-  // Función para manejar envío del formulario (SIN CLAVE)
+  // Función para manejar envío del formulario (SIN solicitar token nuevamente)
   async manejarEnvioFormulario(event) {
     event.preventDefault();
     
@@ -132,10 +211,9 @@ mostrarTransacciones(transacciones) {
       return;
     }
     
-    // Solicitar token de GitHub (solo token, sin clave)
-    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para guardar la transacción:');
-    if (!githubToken) {
-      feedback.innerHTML = '<div class="alert alert-warning">Token requerido para guardar</div>';
+    // Verificar que tenemos token
+    if (!this.tokenActual) {
+      feedback.innerHTML = '<div class="alert alert-danger">Token no disponible. Por favor, reinicie el proceso.</div>';
       return;
     }
     
@@ -151,29 +229,61 @@ mostrarTransacciones(transacciones) {
     try {
       feedback.innerHTML = '<div class="alert alert-info">Guardando transacción en GitHub...</div>';
       
-      // Usar la función de GitHub
-      await this.guardarEnGitHub(nuevaTransaccion, githubToken);
+      // Usar la función de GitHub con el token actual
+      await this.guardarEnGitHub(nuevaTransaccion, this.tokenActual);
       
       feedback.innerHTML = `
         <div class="alert alert-success">
           <strong>✓ Transacción guardada exitosamente</strong><br>
-          <small>La página se recargará en 3 segundos...</small>
+          <small>Puede agregar otra transacción o cerrar el formulario</small>
         </div>
       `;
       
-      // Recargar después de 3 segundos
-      setTimeout(() => {
-        location.reload();
-      }, 3000);
+      // Limpiar formulario para nueva transacción
+      document.getElementById('descripcion').value = '';
+      document.getElementById('monto').value = '';
+      document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+      document.getElementById('descripcion').focus();
+      
+      // Recargar la tabla de transacciones
+      this.cargarTransacciones();
       
     } catch (error) {
       console.error('Error guardando transacción:', error);
       feedback.innerHTML = `
         <div class="alert alert-danger">
           <strong>Error al guardar:</strong> ${error.message}<br>
-          <small>Verifique el token y los permisos</small>
+          <small>Verifique la conexión y permisos</small>
         </div>
       `;
+    }
+  },
+
+  // Función para verificar token
+  async verificarToken(githubToken) {
+    try {
+      const tokenLimpio = githubToken.trim();
+      
+      if (!tokenLimpio.startsWith('github_pat_')) {
+        throw new Error('Formato de token incorrecto');
+      }
+      
+      const response = await fetch(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${tokenLimpio}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        }
+      );
+      
+      return response.ok;
+      
+    } catch (error) {
+      console.error('Error verificando token:', error);
+      return false;
     }
   },
 
@@ -320,99 +430,6 @@ mostrarTransacciones(transacciones) {
     }
   },
 
-  // Función de diagnóstico mejorada
-  async diagnosticarToken(githubToken) {
-    try {
-      console.log('🔍 DIAGNÓSTICO COMPLETO DEL TOKEN');
-      
-      const tokenLimpio = githubToken.trim();
-      console.log('📝 Token (primeros 8 chars):', tokenLimpio.substring(0, 8) + '...');
-      console.log('📝 Longitud del token:', tokenLimpio.length);
-      
-      // Verificar formato del token (debe empezar con github_pat_)
-      if (!tokenLimpio.startsWith('github_pat_')) {
-        console.error('❌ FORMATO INCORRECTO: Los Fine-Grained Tokens deben empezar con "github_pat_"');
-        console.log('💡 El token proporcionado:', tokenLimpio.substring(0, 20) + '...');
-        return {
-          success: false,
-          error: 'Formato de token incorrecto. Debe empezar con "github_pat_"'
-        };
-      }
-      
-      console.log('✅ Formato del token correcto');
-      
-      // Probar acceso al repositorio
-      console.log('🔗 Probando acceso al repositorio...');
-      const repoResponse = await this.llamarGitHubAPI(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
-        { token: tokenLimpio }
-      );
-      
-      console.log('✅ REPOSITORIO ACCESIBLE:', repoResponse.full_name);
-      console.log('📁 Visibilidad:', repoResponse.visibility);
-      console.log('🔒 Privado:', repoResponse.private);
-      
-      // Probar acceso al archivo
-      console.log('📋 Verificando archivo de transacciones...');
-      try {
-        const fileData = await this.llamarGitHubAPI(
-          `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
-          { token: tokenLimpio }
-        );
-        console.log('✅ transacciones.json existe y es accesible');
-        console.log('📊 Número de transacciones:', fileData.transacciones ? fileData.transacciones.length : 'N/A');
-      } catch (error) {
-        if (error.message.includes('404')) {
-          console.log('ℹ️ transacciones.json no existe (se creará automáticamente)');
-        } else {
-          console.error('❌ Error accediendo al archivo:', error.message);
-          return {
-            success: false,
-            error: `Error accediendo al archivo: ${error.message}`
-          };
-        }
-      }
-      
-      console.log('🎉 DIAGNÓSTICO COMPLETADO - Token funciona correctamente');
-      return {
-        success: true,
-        message: 'Token funciona correctamente'
-      };
-      
-    } catch (error) {
-      console.error('💥 ERROR EN DIAGNÓSTICO:', error);
-      
-      let mensajeError = 'Error desconocido';
-      if (error.message.includes('401')) {
-        mensajeError = 'Token inválido o expirado. Verifique las credenciales.';
-      } else if (error.message.includes('403')) {
-        mensajeError = 'Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".';
-      } else if (error.message.includes('404')) {
-        mensajeError = 'Repositorio no encontrado. Verifique que "suarezfco/nelly" exista.';
-      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
-        mensajeError = 'Error de conexión o CORS. Verifique su conexión a internet.';
-      } else {
-        mensajeError = error.message;
-      }
-      
-      return {
-        success: false,
-        error: mensajeError
-      };
-    }
-  },
-
-  // Función simple para probar token desde consola
-  async probarTokenSimple(githubToken) {
-    const resultado = await this.diagnosticarToken(githubToken);
-    if (resultado.success) {
-      alert('✅ Token funciona correctamente');
-    } else {
-      alert('❌ ' + resultado.error);
-    }
-    return resultado.success;
-  },
-
   // Función para inicializar eventos
   inicializarEventos() {
     // Botón para mostrar/ocultar formulario
@@ -429,6 +446,18 @@ mostrarTransacciones(transacciones) {
     document.getElementById('nuevaTransaccionForm').addEventListener('submit', (e) => {
       this.manejarEnvioFormulario(e);
     });
+    
+    // Botón para limpiar token (opcional - para debugging)
+    const btnLimpiarToken = document.createElement('button');
+    btnLimpiarToken.className = 'btn btn-outline-secondary btn-sm ms-2';
+    btnLimpiarToken.innerHTML = '<i class="bi bi-x-circle"></i> Limpiar Token';
+    btnLimpiarToken.addEventListener('click', () => {
+      this.tokenActual = null;
+      this.actualizarEstadoBoton();
+      alert('Token limpiado. Debe ingresarlo nuevamente para agregar transacciones.');
+    });
+    
+    document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
   },
 
   // Inicializar pestaña de transacciones
@@ -436,12 +465,5 @@ mostrarTransacciones(transacciones) {
     this.inicializarEventos();
     this.cargarTransacciones();
     console.log('Pestaña "Transacciones" inicializada');
-    
-    // Exponer funciones para debugging
-    window.transaccionesDebug = {
-      diagnosticarToken: (token) => this.diagnosticarToken(token),
-      probarTokenSimple: (token) => this.probarTokenSimple(token),
-      guardarEnGitHub: (transaccion, token) => this.guardarEnGitHub(transaccion, token)
-    };
   }
 };
