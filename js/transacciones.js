@@ -1,7 +1,7 @@
 const transacciones = {
   // Configuración para GitHub con Fine-Grained Token
   GITHUB_CONFIG: {
-    OWNER: 'suarezfco',
+    OWNER: 'suarezfco65',
     REPO: 'nelly',
     BRANCH: 'main',
     FILE_PATH: 'json/transacciones.json'
@@ -414,7 +414,7 @@ const transacciones = {
       } else if (error.message.includes('403')) {
         throw new Error('Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".');
       } else if (error.message.includes('404')) {
-        throw new Error('Repositorio no encontrado. Verifique que "suarezfco/nelly" exista.');
+        throw new Error('Repositorio no encontrado. Verifique que "suarezfco65/nelly" exista.');
       } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
         throw new Error('Error de conexión. Verifique su conexión a internet o problemas de CORS.');
       } else {
