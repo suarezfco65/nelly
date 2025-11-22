@@ -1,7 +1,7 @@
 const transacciones = {
   // Configuración para GitHub con Fine-Grained Token
   GITHUB_CONFIG: {
-    OWNER: 'suarezfco65',
+    OWNER: 'suarezfco',
     REPO: 'nelly',
     BRANCH: 'main',
     FILE_PATH: 'json/transacciones.json'
@@ -10,6 +10,12 @@ const transacciones = {
   // Estado de la aplicación
   tokenActual: null,
   transaccionesPendientes: [],
+
+  // Formato de números para Venezuela
+  formatoNumero: new Intl.NumberFormat('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }),
 
   // Función para cargar transacciones desde JSON
   async cargarTransacciones() {
@@ -47,18 +53,20 @@ const transacciones = {
               <tr>
                 <td>${this.formatearFecha(trans.fecha)}</td>
                 <td>${trans.descripcion}</td>
-                <td class="text-end text-success">${trans.ingreso > 0 ? trans.ingreso.toFixed(2) : '-'}</td>
-                <td class="text-end text-danger">${trans.egreso > 0 ? trans.egreso.toFixed(2) : '-'}</td>
+                <td class="text-end text-success">${trans.ingreso > 0 ? this.formatoNumero.format(trans.ingreso) : '-'}</td>
+                <td class="text-end text-danger">${trans.egreso > 0 ? this.formatoNumero.format(trans.egreso) : '-'}</td>
                 <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
-                  ${trans.saldo.toFixed(2)}
+                  ${this.formatoNumero.format(trans.saldo)}
                 </td>
               </tr>
             `).join('')}
           </tbody>
+          ${this.generarTotales(ultimasTransacciones)}
         </table>
       </div>
       <div class="mt-2 text-muted">
         Mostrando las últimas ${ultimasTransacciones.length} transacciones
+        ${this.tokenActual ? '<span class="badge bg-success ms-2">Token Activo</span>' : ''}
       </div>
     `;
 
@@ -66,6 +74,26 @@ const transacciones = {
     
     // Actualizar estado del botón basado en si tenemos token
     this.actualizarEstadoBoton();
+  },
+
+  // Función para generar fila de totales
+  generarTotales(transacciones) {
+    const totalIngresos = transacciones.reduce((sum, trans) => sum + trans.ingreso, 0);
+    const totalEgresos = transacciones.reduce((sum, trans) => sum + trans.egreso, 0);
+    const saldoActual = transacciones.length > 0 ? transacciones[0].saldo : 0;
+
+    return `
+      <tfoot class="table-secondary">
+        <tr>
+          <th colspan="2" class="text-end">Totales:</th>
+          <th class="text-end text-success">${totalIngresos > 0 ? this.formatoNumero.format(totalIngresos) : '-'}</th>
+          <th class="text-end text-danger">${totalEgresos > 0 ? this.formatoNumero.format(totalEgresos) : '-'}</th>
+          <th class="text-end fw-bold ${saldoActual >= 0 ? 'text-success' : 'text-danger'}">
+            ${this.formatoNumero.format(saldoActual)}
+          </th>
+        </tr>
+      </tfoot>
+    `;
   },
 
   // Función para formatear fecha
@@ -235,6 +263,7 @@ const transacciones = {
       feedback.innerHTML = `
         <div class="alert alert-success">
           <strong>✓ Transacción guardada exitosamente</strong><br>
+          <small>Monto: ${this.formatoNumero.format(monto)} Bs - ${tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}</small><br>
           <small>Puede agregar otra transacción o cerrar el formulario</small>
         </div>
       `;
@@ -454,6 +483,7 @@ const transacciones = {
     btnLimpiarToken.addEventListener('click', () => {
       this.tokenActual = null;
       this.actualizarEstadoBoton();
+      this.cargarTransacciones(); // Recargar para quitar el badge de token activo
       alert('Token limpiado. Debe ingresarlo nuevamente para agregar transacciones.');
     });
     
