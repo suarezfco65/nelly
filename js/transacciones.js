@@ -23,43 +23,49 @@ const transacciones = {
   },
 
   // Función para mostrar transacciones en una tabla
-  mostrarTransacciones(transacciones) {
-    const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
-    
-    const contenido = `
-      <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
-            <tr>
-              <th>Fecha</th>
-              <th>Descripción</th>
-              <th class="text-end">Ingreso (Bs)</th>
-              <th class="text-end">Egreso (Bs)</th>
-              <th class="text-end">Saldo (Bs)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${ultimasTransacciones.map(trans => `
-              <tr>
-                <td>${this.formatearFecha(trans.fecha)}</td>
-                <td>${trans.descripcion}</td>
-                <td class="text-end text-success">${trans.ingreso > 0 ? trans.ingreso.toFixed(2) : '-'}</td>
-                <td class="text-end text-danger">${trans.egreso > 0 ? trans.egreso.toFixed(2) : '-'}</td>
-                <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
-                  ${trans.saldo.toFixed(2)}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div class="mt-2 text-muted">
-        Mostrando las últimas ${ultimasTransacciones.length} transacciones
-      </div>
-    `;
+mostrarTransacciones(transacciones) {
+  const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
+  
+  const formatoMoneda = new Intl.NumberFormat('es-VE', {
+    style: 'currency',
+    currency: 'VES',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 
-    document.getElementById('transaccionesContent').innerHTML = contenido;
-  },
+  const contenido = `
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th class="text-end">Ingreso (Bs)</th>
+            <th class="text-end">Egreso (Bs)</th>
+            <th class="text-end">Saldo (Bs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ultimasTransacciones.map(trans => `
+            <tr>
+              <td>${this.formatearFecha(trans.fecha)}</td>
+              <td>${trans.descripcion}</td>
+              <td class="text-end text-success">${trans.ingreso > 0 ? formatoMoneda.format(trans.ingreso) : '-'}</td>
+              <td class="text-end text-danger">${trans.egreso > 0 ? formatoMoneda.format(trans.egreso) : '-'}</td>
+              <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
+                ${formatoMoneda.format(trans.saldo)}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2 text-muted">
+      Mostrando las últimas ${ultimasTransacciones.length} transacciones
+    </div>
+  `;
+  document.getElementById('transaccionesContent').innerHTML = contenido;
+},
 
   // Función para formatear fecha
   formatearFecha(fechaString) {
