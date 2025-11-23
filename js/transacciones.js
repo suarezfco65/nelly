@@ -76,11 +76,31 @@ const transacciones = {
     this.actualizarEstadoBoton();
   },
 
-  // Función para formatear fecha
-  formatearFecha(fechaString) {
-    const fecha = new Date(fechaString);
-    return fecha.toLocaleDateString('es-ES');
-  },
+// Función para formatear fecha - VERSIÓN ROBUSTA
+formatearFecha(fechaString) {
+  try {
+    // Dividir la fecha en partes para evitar problemas de zona horaria
+    const [anio, mes, dia] = fechaString.split('-').map(Number);
+    
+    // Crear fecha usando componentes individuales (evita problemas de UTC)
+    const fecha = new Date(anio, mes - 1, dia); // mes - 1 porque JavaScript usa 0-11
+    
+    // Verificar si la fecha es válida
+    if (isNaN(fecha.getTime())) {
+      throw new Error('Fecha inválida');
+    }
+    
+    return fecha.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    
+  } catch (error) {
+    console.error('Error formateando fecha:', fechaString, error);
+    return fechaString; // Devolver el string original si hay error
+  }
+},
 
   // Función para mostrar error
   mostrarError(mensaje) {
