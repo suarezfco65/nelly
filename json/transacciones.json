@@ -2,6 +2,13 @@
   "transacciones": [
     {
       "fecha": "2025-11-23",
+      "descripcion": "Ajuste de prueba",
+      "ingreso": 0,
+      "egreso": 1000,
+      "saldo": 2540
+    },
+    {
+      "fecha": "2025-11-23",
       "descripcion": "Prueba con mil de ingreso",
       "ingreso": 1000,
       "egreso": 0,
