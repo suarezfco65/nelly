@@ -4,6 +4,16 @@ const CONFIG = {
   JSON_URL: "json/datos-basicos.json",
 };
 
+// Al inicio de app.js, verificar acceso
+function verificarAcceso() {
+  const claveAcceso = sessionStorage.getItem("claveAcceso");
+  if (!claveAcceso) {
+    window.location.href = "login.html";
+    return false;
+  }
+  return true;
+}
+
 // Elementos DOM globales
 const elements = {
   unmaskBtn: document.getElementById("unmaskBtn"),
@@ -48,14 +58,14 @@ function limpiarModales() {
 
 // Inicializar la aplicación
 function inicializarApp() {
-  // Inicializar eventos globales
-  inicializarEventosGlobales();
+  // verificación de acceso al iniciar
+  if (!verificarAcceso()) return;
 
-  // Inicializar cada pestaña
+  inicializarEventosGlobales();
   datosBasicos.inicializar();
   documentos.inicializar();
   compras.inicializar();
-  transacciones.inicializar(); // ← Agregar esta línea
+  transacciones.inicializar();
 
   // Configurar eventos de limpieza de modales
   elements.docModal.addEventListener("hidden.bs.modal", limpiarModales);
