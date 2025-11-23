@@ -154,6 +154,93 @@ async obtenerTasasDolar() {
     }
   },
 
+  // Función para mostrar transacciones en una tabla - VERSIÓN UNIFICADA
+mostrarTransacciones(transacciones) {
+  const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
+  
+  const contenido = `
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Transacción</th>
+            <th class="text-end">Saldo (Bs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ultimasTransacciones.map(trans => {
+            const monto = trans.ingreso > 0 ? trans.ingreso : trans.egreso;
+            const montoDolares = this.convertirBsADolares(monto, trans.fecha);
+            const infoTasa = this.obtenerInfoTasa(trans.fecha);
+            const tooltipTasa = infoTasa ? 
+              `Tasa: ${this.formatoNumero.format(infoTasa.tasa)} Bs/$ (${infoTasa.fecha})` : 
+              'Tasa no disponible';
+            
+            // Determinar color y tipo de monto
+            const esIngreso = trans.ingreso > 0;
+            const colorMonto = esIngreso ? 'text-success' : 'text-danger';
+            const simboloMonto = esIngreso ? '+' : '-';
+            
+            return `
+              <tr>
+                <td>
+                  <div class="d-flex flex-column">
+                    <div class="d-flex align-items-start">
+                      <strong class="me-2">${this.formatearFecha(trans.fecha)}</strong>
+                      <span class="flex-grow-1">${trans.descripcion}</span>
+                    </div>
+                    <div class="mt-1">
+                      <strong class="${colorMonto}">
+                        ${simboloMonto} ${this.formatoNumero.format(monto)} Bs
+                      </strong>
+                      ${montoDolares ? `
+                        <small class="text-muted ms-2" title="${tooltipTasa}">
+                          (${this.formatearDolares(montoDolares)})
+                          ${!infoTasa?.esExacta ? ' *' : ''}
+                        </small>
+                      ` : ''}
+                    </div>
+                  </div>
+                </td>
+                <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
+                  ${this.formatoNumero.format(trans.saldo)}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2 text-muted">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          Mostrando las últimas ${ultimasTransacciones.length} transacciones
+          ${this.tokenActual ? '<span class="badge bg-success ms-2">Token Activo</span>' : ''}
+        </div>
+        <div>
+          ${this.ultimaTasa ? `
+            <span class="badge bg-info">Tasa actual: $1 = ${this.formatoNumero.format(this.ultimaTasa)} Bs</span>
+            <span class="badge bg-secondary ms-1">${this.tasasDolar.length} tasas cargadas</span>
+          ` : ''}
+        </div>
+      </div>
+      ${ultimasTransacciones.some(trans => {
+        const infoTasa = this.obtenerInfoTasa(trans.fecha);
+        return infoTasa && !infoTasa.esExacta;
+      }) ? `
+        <div class="mt-1 small text-warning">
+          <i class="bi bi-info-circle"></i> * Tasas aproximadas (no se encontró tasa exacta para la fecha)
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  document.getElementById('transaccionesContent').innerHTML = contenido;
+  
+  // Actualizar estado del botón basado en si tenemos token
+  this.actualizarEstadoBoton();
+},
+/*
   // Función para mostrar transacciones en una tabla
   mostrarTransacciones(transacciones) {
     const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
@@ -269,7 +356,7 @@ async obtenerTasasDolar() {
       </div>
     `;
   },
-
+*/
   // Función para actualizar estado del botón
   actualizarEstadoBoton() {
     const boton = document.getElementById('mostrarFormTransaccion');
