@@ -154,17 +154,30 @@ async obtenerTasasDolar() {
     }
   },
 
-  // Función para mostrar transacciones en una tabla - VERSIÓN UNIFICADA
+
+
+  // Función para mostrar transacciones en una tabla - VERSIÓN RESPONSIVE
 mostrarTransacciones(transacciones) {
-  const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
+  const ultimasTransacciones = transacciones.slice(0, 10);
+  
+  // Detectar si la pantalla es angosta (menos de 768px)
+  const esPantallaAngosta = window.innerWidth < 768;
   
   const contenido = `
     <div class="table-responsive">
       <table class="table table-striped table-hover">
         <thead class="table-dark">
           <tr>
-            <th>Transacción</th>
-            <th class="text-end">Saldo (Bs)</th>
+            ${esPantallaAngosta ? `
+              <th>Transacción</th>
+              <th class="text-end">Saldo (Bs)</th>
+            ` : `
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th class="text-end">Ingreso (Bs)</th>
+              <th class="text-end">Egreso (Bs)</th>
+              <th class="text-end">Saldo (Bs)</th>
+            `}
           </tr>
         </thead>
         <tbody>
@@ -176,96 +189,40 @@ mostrarTransacciones(transacciones) {
               `Tasa: ${this.formatoNumero.format(infoTasa.tasa)} Bs/$ (${infoTasa.fecha})` : 
               'Tasa no disponible';
             
-            // Determinar color y tipo de monto
             const esIngreso = trans.ingreso > 0;
             const colorMonto = esIngreso ? 'text-success' : 'text-danger';
             const simboloMonto = esIngreso ? '+' : '-';
             
-            return `
-              <tr>
-                <td>
-                  <div class="d-flex flex-column">
-                    <div class="d-flex align-items-start">
-                      <strong class="me-2">${this.formatearFecha(trans.fecha)}</strong>
-                      <span class="flex-grow-1">${trans.descripcion}</span>
+            if (esPantallaAngosta) {
+              // VISTA COMPACTA para pantallas angostas
+              return `
+                <tr>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <div class="d-flex align-items-start">
+                        <strong class="me-2">${this.formatearFecha(trans.fecha)}</strong>
+                        <span class="flex-grow-1">${trans.descripcion}</span>
+                      </div>
+                      <div class="mt-1">
+                        <strong class="${colorMonto}">
+                          ${simboloMonto} ${this.formatoNumero.format(monto)} Bs
+                        </strong>
+                        ${montoDolares ? `
+                          <small class="text-muted ms-2" title="${tooltipTasa}">
+                            (${this.formatearDolares(montoDolares)})
+                            ${!infoTasa?.esExacta ? ' *' : ''}
+                          </small>
+                        ` : ''}
+                      </div>
                     </div>
-                    <div class="mt-1">
-                      <strong class="${colorMonto}">
-                        ${simboloMonto} ${this.formatoNumero.format(monto)} Bs
-                      </strong>
-                      ${montoDolares ? `
-                        <small class="text-muted ms-2" title="${tooltipTasa}">
-                          (${this.formatearDolares(montoDolares)})
-                          ${!infoTasa?.esExacta ? ' *' : ''}
-                        </small>
-                      ` : ''}
-                    </div>
-                  </div>
-                </td>
-                <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
-                  ${this.formatoNumero.format(trans.saldo)}
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-    <div class="mt-2 text-muted">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          Mostrando las últimas ${ultimasTransacciones.length} transacciones
-          ${this.tokenActual ? '<span class="badge bg-success ms-2">Token Activo</span>' : ''}
-        </div>
-        <div>
-          ${this.ultimaTasa ? `
-            <span class="badge bg-info">Tasa actual: $1 = ${this.formatoNumero.format(this.ultimaTasa)} Bs</span>
-            <span class="badge bg-secondary ms-1">${this.tasasDolar.length} tasas cargadas</span>
-          ` : ''}
-        </div>
-      </div>
-      ${ultimasTransacciones.some(trans => {
-        const infoTasa = this.obtenerInfoTasa(trans.fecha);
-        return infoTasa && !infoTasa.esExacta;
-      }) ? `
-        <div class="mt-1 small text-warning">
-          <i class="bi bi-info-circle"></i> * Tasas aproximadas (no se encontró tasa exacta para la fecha)
-        </div>
-      ` : ''}
-    </div>
-  `;
-
-  document.getElementById('transaccionesContent').innerHTML = contenido;
-  
-  // Actualizar estado del botón basado en si tenemos token
-  this.actualizarEstadoBoton();
-},
-/*
-  // Función para mostrar transacciones en una tabla
-  mostrarTransacciones(transacciones) {
-    const ultimasTransacciones = transacciones.slice(0, 10); // Últimas 10 transacciones
-    
-    const contenido = `
-      <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
-            <tr>
-              <th>Fecha</th>
-              <th>Descripción</th>
-              <th class="text-end">Ingreso (Bs)</th>
-              <th class="text-end">Egreso (Bs)</th>
-              <th class="text-end">Saldo (Bs)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${ultimasTransacciones.map(trans => {
-              const monto = trans.ingreso > 0 ? trans.ingreso : trans.egreso;
-              const montoDolares = this.convertirBsADolares(monto, trans.fecha);
-              const infoTasa = this.obtenerInfoTasa(trans.fecha);
-              const tooltipTasa = infoTasa ? 
-                `Tasa: ${this.formatoNumero.format(infoTasa.tasa)} Bs/$ (${infoTasa.fecha})` : 
-                'Tasa no disponible';
-              
+                  </td>
+                  <td class="text-end fw-bold ${trans.saldo >= 0 ? 'text-success' : 'text-danger'}">
+                    ${this.formatoNumero.format(trans.saldo)}
+                  </td>
+                </tr>
+              `;
+            } else {
+              // VISTA EXTENDIDA para pantallas anchas
               return `
                 <tr>
                   <td>${this.formatearFecha(trans.fecha)}</td>
@@ -288,40 +245,44 @@ mostrarTransacciones(transacciones) {
                   </td>
                 </tr>
               `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div class="mt-2 text-muted">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            Mostrando las últimas ${ultimasTransacciones.length} transacciones
-            ${this.tokenActual ? '<span class="badge bg-success ms-2">Token Activo</span>' : ''}
-          </div>
-          <div>
-            ${this.ultimaTasa ? `
-              <span class="badge bg-info">Tasa actual: $1 = ${this.formatoNumero.format(this.ultimaTasa)} Bs</span>
-              <span class="badge bg-secondary ms-1">${this.tasasDolar.length} tasas cargadas</span>
-            ` : ''}
-          </div>
+            }
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2 text-muted">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          Mostrando las últimas ${ultimasTransacciones.length} transacciones
+          ${this.tokenActual ? '<span class="badge bg-success ms-2">Token Activo</span>' : ''}
+          <span class="badge bg-light text-dark ms-2">
+            <i class="bi bi-${esPantallaAngosta ? 'phone' : 'laptop'}"></i>
+            ${esPantallaAngosta ? 'Vista compacta' : 'Vista extendida'}
+          </span>
         </div>
-        ${ultimasTransacciones.some(trans => {
-          const infoTasa = this.obtenerInfoTasa(trans.fecha);
-          return infoTasa && !infoTasa.esExacta;
-        }) ? `
-          <div class="mt-1 small text-warning">
-            <i class="bi bi-info-circle"></i> * Tasas aproximadas (no se encontró tasa exacta para la fecha)
-          </div>
-        ` : ''}
+        <div>
+          ${this.ultimaTasa ? `
+            <span class="badge bg-info">Tasa actual: $1 = ${this.formatoNumero.format(this.ultimaTasa)} Bs</span>
+            <span class="badge bg-secondary ms-1">${this.tasasDolar.length} tasas cargadas</span>
+          ` : ''}
+        </div>
       </div>
-    `;
+      ${ultimasTransacciones.some(trans => {
+        const infoTasa = this.obtenerInfoTasa(trans.fecha);
+        return infoTasa && !infoTasa.esExacta;
+      }) ? `
+        <div class="mt-1 small text-warning">
+          <i class="bi bi-info-circle"></i> * Tasas aproximadas (no se encontró tasa exacta para la fecha)
+        </div>
+      ` : ''}
+    </div>
+  `;
 
-    document.getElementById('transaccionesContent').innerHTML = contenido;
-    
-    // Actualizar estado del botón basado en si tenemos token
-    this.actualizarEstadoBoton();
-  },
-*/
+  document.getElementById('transaccionesContent').innerHTML = contenido;
+  this.actualizarEstadoBoton();
+},
+
+  
   // Función para formatear fecha - VERSIÓN ROBUSTA
   formatearFecha(fechaString) {
     try {
@@ -781,11 +742,46 @@ mostrarTransacciones(transacciones) {
     
     document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
   },
-
-  // Inicializar pestaña de transacciones
-  inicializar() {
-    this.inicializarEventos();
+// Agregar también un listener para redimensionamiento de ventana
+inicializarEventos() {
+  // Botón para mostrar/ocultar formulario
+  document.getElementById('mostrarFormTransaccion').addEventListener('click', () => {
+    this.toggleFormulario();
+  });
+  
+  // Botón cancelar
+  document.getElementById('cancelarTransaccion').addEventListener('click', () => {
+    this.toggleFormulario();
+  });
+  
+  // Formulario de envío
+  document.getElementById('nuevaTransaccionForm').addEventListener('submit', (e) => {
+    this.manejarEnvioFormulario(e);
+  });
+  
+  // Redimensionamiento de ventana para cambiar vista automáticamente
+  window.addEventListener('resize', () => {
+    // Recargar la vista si cambia entre modos
+    const nuevaEsAngosta = window.innerWidth < 768;
+    const elementoActual = document.querySelector('.badge.bg-light');
+    const actualEsAngosta = elementoActual?.textContent.includes('compacta');
+    
+    if (nuevaEsAngosta !== actualEsAngosta) {
+      this.cargarTransacciones();
+    }
+  });
+  
+  // Botón para limpiar token (opcional - para debugging)
+  const btnLimpiarToken = document.createElement('button');
+  btnLimpiarToken.className = 'btn btn-outline-secondary btn-sm ms-2';
+  btnLimpiarToken.innerHTML = '<i class="bi bi-x-circle"></i> Limpiar Token';
+  btnLimpiarToken.addEventListener('click', () => {
+    this.tokenActual = null;
+    this.actualizarEstadoBoton();
     this.cargarTransacciones();
-    console.log('Pestaña "Transacciones" inicializada');
-  }
+    alert('Token limpiado. Debe ingresarlo nuevamente para agregar transacciones.');
+  });
+  
+  document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
+},
 };
