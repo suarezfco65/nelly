@@ -321,7 +321,7 @@ mostrarTransacciones(transacciones) {
     // Actualizar estado del botón basado en si tenemos token
     this.actualizarEstadoBoton();
   },
-
+*/
   // Función para formatear fecha - VERSIÓN ROBUSTA
   formatearFecha(fechaString) {
     try {
@@ -356,7 +356,7 @@ mostrarTransacciones(transacciones) {
       </div>
     `;
   },
-*/
+
   // Función para actualizar estado del botón
   actualizarEstadoBoton() {
     const boton = document.getElementById('mostrarFormTransaccion');
