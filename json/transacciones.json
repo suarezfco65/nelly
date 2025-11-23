@@ -2,6 +2,13 @@
   "transacciones": [
     {
       "fecha": "2025-11-23",
+      "descripcion": "Prueba con mil de ingreso",
+      "ingreso": 1000,
+      "egreso": 0,
+      "saldo": 3540
+    },
+    {
+      "fecha": "2025-11-23",
       "descripcion": "Pago a Rosneify Rendon",
       "ingreso": 0,
       "egreso": 3650,
