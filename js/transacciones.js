@@ -19,56 +19,55 @@ const transacciones = {
     maximumFractionDigits: 2
   }),
 
-  // Función para obtener todas las tasas de dólar
-  async obtenerTasasDolar() {
-    try {
-      const response = await fetch('https://api.dolarvzla.com/public/exchange-rate/list');
-      if (!response.ok) {
-        throw new Error('Error al obtener tasas de dólar');
-      }
-      
-      const datos = await response.json();
-      
-      if (!datos.data || !Array.isArray(datos.data)) {
-        throw new Error('Formato de respuesta inválido');
-      }
-      
-      // Filtrar solo tasas USD y ordenar por fecha (más reciente primero)
-      this.tasasDolar = datos.data
-        .filter(tasa => 
-          tasa.currency && 
-          tasa.currency.includes('USD') && 
-          tasa.rate && 
-          tasa.date
-        )
-        .map(tasa => ({
-          fecha: tasa.date,
-          tasa: parseFloat(tasa.rate),
-          currency: tasa.currency
-        }))
-        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // Más reciente primero
-      
-      // Guardar la última tasa (más reciente)
-      if (this.tasasDolar.length > 0) {
-        this.ultimaTasa = this.tasasDolar[0].tasa;
-        console.log('✅ Tasas de dólar obtenidas:', this.tasasDolar.length, 'registros');
-        console.log('💰 Última tasa:', this.ultimaTasa, 'Bs/$ - Fecha:', this.tasasDolar[0].fecha);
-      } else {
-        throw new Error('No se encontraron tasas USD válidas');
-      }
-      
-      return this.tasasDolar;
-      
-    } catch (error) {
-      console.error('Error obteniendo tasas de dólar:', error);
-      // Usar tasa por defecto si hay error
-      this.ultimaTasa = 40.0;
-      this.tasasDolar = [{ fecha: new Date().toISOString().split('T')[0], tasa: 40.0, currency: 'USD' }];
-      console.log('⚠️ Usando tasa por defecto:', this.ultimaTasa);
-      return this.tasasDolar;
+// Función para obtener todas las tasas de dólar - VERSIÓN CORREGIDA
+async obtenerTasasDolar() {
+  try {
+    const response = await fetch('https://api.dolarvzla.com/public/exchange-rate/list');
+    if (!response.ok) {
+      throw new Error('Error al obtener tasas de dólar');
     }
-  },
-
+    
+    const datos = await response.json();
+    
+    // USAR LA ESTRUCTURA CORRECTA DE LA API
+    if (!datos.rates || !Array.isArray(datos.rates)) {
+      throw new Error('Formato de respuesta inválido - no se encontró array "rates"');
+    }
+    
+    // Mapear correctamente los datos de la nueva estructura
+    this.tasasDolar = datos.rates
+      .filter(tasa => 
+        tasa.usd && 
+        tasa.date
+      )
+      .map(tasa => ({
+        fecha: tasa.date,
+        tasa: parseFloat(tasa.usd),
+        currency: 'USD'
+      }))
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // Más reciente primero
+    
+    // Guardar la última tasa (más reciente)
+    if (this.tasasDolar.length > 0) {
+      this.ultimaTasa = this.tasasDolar[0].tasa;
+      console.log('✅ Tasas de dólar obtenidas:', this.tasasDolar.length, 'registros');
+      console.log('💰 Última tasa:', this.ultimaTasa, 'Bs/$ - Fecha:', this.tasasDolar[0].fecha);
+    } else {
+      throw new Error('No se encontraron tasas USD válidas');
+    }
+    
+    return this.tasasDolar;
+    
+  } catch (error) {
+    console.error('Error obteniendo tasas de dólar:', error);
+    // Usar tasa por defecto si hay error
+    this.ultimaTasa = 40.0;
+    this.tasasDolar = [{ fecha: new Date().toISOString().split('T')[0], tasa: 40.0, currency: 'USD' }];
+    console.log('⚠️ Usando tasa por defecto:', this.ultimaTasa);
+    return this.tasasDolar;
+  }
+},
+  
   // Función para buscar tasa por fecha específica
   buscarTasaPorFecha(fechaTransaccion) {
     if (!this.tasasDolar || this.tasasDolar.length === 0) {
