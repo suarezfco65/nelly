@@ -265,61 +265,61 @@ async function verificarTokenGitHub(token) {
 
 // Función para guardar datos encriptados en GitHub
 async function guardarEnGitHub(datosEncriptados, token, mensajeCommit) {
-  try {
-    // 1. Obtener el archivo actual (si existe)
-    let sha = null;
     try {
-      const getResponse = await fetch(
-        `https://api.github.com/repos/${CONFIG_LOGIN.GITHUB.OWNER}/${CONFIG_LOGIN.GITHUB.REPO}/contents/json/datos-basicos-encriptado.json`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github.v3+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
+        // 1. Obtener el archivo actual (si existe)
+        let sha = null;
+        try {
+            const getResponse = await fetch(
+                `https://api.github.com/repos/${CONFIG_LOGIN.GITHUB.OWNER}/${CONFIG_LOGIN.GITHUB.REPO}/contents/json/datos-basicos-encriptado.json`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                }
+            );
+            
+            if (getResponse.ok) {
+                const fileData = await getResponse.json();
+                sha = fileData.sha;
+            }
+        } catch (error) {
+            console.log('Archivo no existe, se creará nuevo');
         }
-      );
+        
+        // 2. CORRECCIÓN: Los datos ya están en base64, NO hacer doble encoding
+        // GitHub espera el contenido en base64, pero seguridad.encriptar ya devuelve base64
+        const updateResponse = await fetch(
+            `https://api.github.com/repos/${CONFIG_LOGIN.GITHUB.OWNER}/${CONFIG_LOGIN.GITHUB.REPO}/contents/json/datos-basicos-encriptado.json`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                    'X-GitHub-Api-Version': '2022-11-28'
+                },
+                body: JSON.stringify({
+                    message: mensajeCommit,
+                    content: datosEncriptados, // YA está en base64, no usar btoa()
+                    sha: sha,
+                    branch: CONFIG_LOGIN.GITHUB.BRANCH
+                })
+            }
+        );
 
-      if (getResponse.ok) {
-        const fileData = await getResponse.json();
-        sha = fileData.sha;
-      }
+        if (!updateResponse.ok) {
+            const errorData = await updateResponse.json();
+            throw new Error(`Error al guardar en GitHub: ${updateResponse.status} - ${errorData.message}`);
+        }
+
+        return await updateResponse.json();
+        
     } catch (error) {
-      console.log("Archivo no existe, se creará nuevo");
+        console.error('Error guardando en GitHub:', error);
+        throw error;
     }
-
-    // 2. Guardar datos encriptados en GitHub
-    const updateResponse = await fetch(
-      `https://api.github.com/repos/${CONFIG_LOGIN.GITHUB.OWNER}/${CONFIG_LOGIN.GITHUB.REPO}/contents/json/datos-basicos-encriptado.json`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github.v3+json",
-          "Content-Type": "application/json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        body: JSON.stringify({
-          message: mensajeCommit,
-          content: datosEncriptados,
-          sha: sha,
-          branch: CONFIG_LOGIN.GITHUB.BRANCH,
-        }),
-      }
-    );
-
-    if (!updateResponse.ok) {
-      const errorData = await updateResponse.json();
-      throw new Error(
-        `Error al guardar en GitHub: ${updateResponse.status} - ${errorData.message}`
-      );
-    }
-
-    return await updateResponse.json();
-  } catch (error) {
-    console.error("Error guardando en GitHub:", error);
-    throw error;
-  }
 }
 
 // Función para procesar cambio de clave
