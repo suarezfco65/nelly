@@ -742,8 +742,9 @@ mostrarTransacciones(transacciones) {
     
     document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
   },
-// Agregar también un listener para redimensionamiento de ventana
-inicializar() {
+  
+// Función para inicializar eventos - VERSIÓN MEJORADA
+inicializarEventos() {
   // Botón para mostrar/ocultar formulario
   document.getElementById('mostrarFormTransaccion').addEventListener('click', () => {
     this.toggleFormulario();
@@ -759,19 +760,25 @@ inicializar() {
     this.manejarEnvioFormulario(e);
   });
   
-  // Redimensionamiento de ventana para cambiar vista automáticamente
+  // Listener mejorado para redimensionamiento
+  let timeoutId;
   window.addEventListener('resize', () => {
-    // Recargar la vista si cambia entre modos
-    const nuevaEsAngosta = window.innerWidth < 768;
-    const elementoActual = document.querySelector('.badge.bg-light');
-    const actualEsAngosta = elementoActual?.textContent.includes('compacta');
-    
-    if (nuevaEsAngosta !== actualEsAngosta) {
-      this.cargarTransacciones();
-    }
+    // Debounce para evitar múltiples llamadas
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      const nuevaEsAngosta = window.matchMedia('(max-width: 767px)').matches;
+      const elementoActual = document.querySelector('.badge.bg-light');
+      const actualEsAngosta = elementoActual?.textContent.includes('compacta');
+      
+      // Solo recargar si realmente cambió el modo
+      if (nuevaEsAngosta !== actualEsAngosta) {
+        console.log('Cambiando modo de vista:', { nuevaEsAngosta, actualEsAngosta });
+        this.cargarTransacciones();
+      }
+    }, 100);
   });
   
-  // Botón para limpiar token (opcional - para debugging)
+  // Botón para limpiar token
   const btnLimpiarToken = document.createElement('button');
   btnLimpiarToken.className = 'btn btn-outline-secondary btn-sm ms-2';
   btnLimpiarToken.innerHTML = '<i class="bi bi-x-circle"></i> Limpiar Token';
@@ -784,4 +791,20 @@ inicializar() {
   
   document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
 },
+
+// Inicializar pestaña de transacciones - ASEGURAR QUE SE EJECUTE AL CARGAR
+inicializar() {
+  // Esperar a que el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      this.inicializarEventos();
+      this.cargarTransacciones();
+    });
+  } else {
+    this.inicializarEventos();
+    this.cargarTransacciones();
+  }
+  console.log('Pestaña "Transacciones" inicializada');
+}
+  
 };
