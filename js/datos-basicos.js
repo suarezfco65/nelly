@@ -470,89 +470,64 @@ const datosBasicos = {
     }
   },
 
-  // Función para guardar en GitHub (VERSIÓN CON ENCRIPTACIÓN)
-  async guardarEnGitHub(datosModificados, githubToken) {
+// Función para guardar datos encriptados en GitHub
+async function guardarEnGitHub(datosEncriptados, token, mensajeCommit) {
     try {
-      const claveAcceso = sessionStorage.getItem("claveAcceso");
-      if (!claveAcceso) {
-        throw new Error("No hay clave de acceso");
-      }
-
-      const tokenLimpio = githubToken.trim();
-
-      // 1. Encriptar datos antes de guardar
-      const datosEncriptados = await seguridad.encriptar(
-        datosModificados,
-        claveAcceso
-      );
-
-      // 2. Obtener el archivo actual (si existe)
-      let fileData = null;
-      let sha = null;
-
-      try {
-        const getResponse = await fetch(
-          `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/json/datos-basicos-encriptado.json`,
-          {
-            headers: {
-              Authorization: `Bearer ${tokenLimpio}`,
-              Accept: "application/vnd.github.v3+json",
-              "X-GitHub-Api-Version": "2022-11-28",
-            },
-          }
+        // 1. Obtener el archivo actual (si existe)
+        let sha = null;
+        try {
+            const getResponse = await fetch(
+                `https://api.github.com/repos/${CONFIG_LOGIN.GITHUB.OWNER}/${CONFIG_LOGIN.GITHUB.REPO}/contents/json/datos-basicos-encriptado.json`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                }
+            );
+            
+            if (getResponse.ok) {
+                const fileData = await getResponse.json();
+                sha = fileData.sha;
+            }
+        } catch (error) {
+            console.log('Archivo no existe, se creará nuevo');
+        }
+        
+        // 2. CORRECCIÓN: Los datos ya están en base64, NO hacer doble encoding
+        // GitHub espera el contenido en base64, pero seguridad.encriptar ya devuelve base64
+        const updateResponse = await fetch(
+            `https://api.github.com/repos/${CONFIG_LOGIN.GITHUB.OWNER}/${CONFIG_LOGIN.GITHUB.REPO}/contents/json/datos-basicos-encriptado.json`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                    'X-GitHub-Api-Version': '2022-11-28'
+                },
+                body: JSON.stringify({
+                    message: mensajeCommit,
+                    content: datosEncriptados, // YA está en base64, no usar btoa()
+                    sha: sha,
+                    branch: CONFIG_LOGIN.GITHUB.BRANCH
+                })
+            }
         );
 
-        if (getResponse.ok) {
-          fileData = await getResponse.json();
-          sha = fileData.sha;
+        if (!updateResponse.ok) {
+            const errorData = await updateResponse.json();
+            throw new Error(`Error al guardar en GitHub: ${updateResponse.status} - ${errorData.message}`);
         }
-      } catch (error) {
-        console.log("Archivo encriptado no existe, se creará nuevo");
-      }
 
-      // 3. Guardar datos encriptados en GitHub
-      const updateResponse = await fetch(
-        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/json/datos-basicos-encriptado.json`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${tokenLimpio}`,
-            Accept: "application/vnd.github.v3+json",
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-          body: JSON.stringify({
-            message: `Actualizar datos básicos encriptados de ${datosModificados.nombre}`,
-            content: datosEncriptados, // Ya está en base64
-            sha: sha,
-            branch: this.GITHUB_CONFIG.BRANCH,
-          }),
-        }
-      );
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        throw new Error(
-          `Error al actualizar: ${updateResponse.status} - ${errorData.message}`
-        );
-      }
-
-      console.log("✓ Datos encriptados guardados exitosamente");
-      return await updateResponse.json();
+        return await updateResponse.json();
+        
     } catch (error) {
-      console.error("Error en guardarEnGitHub:", error);
-
-      if (error.message.includes("401")) {
-        throw new Error("Token inválido o expirado");
-      } else if (error.message.includes("403")) {
-        throw new Error("Token sin permisos de escritura");
-      } else if (error.message.includes("404")) {
-        throw new Error("Repositorio no encontrado");
-      } else {
-        throw new Error(`Error al guardar: ${error.message}`);
-      }
+        console.error('Error guardando en GitHub:', error);
+        throw error;
     }
-  },
+},
 
   // Función para esperar a que termine el commit de GitHub
   async esperarCommit(commitUrl, githubToken, timeout = 30000) {
