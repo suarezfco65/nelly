@@ -262,7 +262,115 @@ const transacciones = {
     }
   },
 
-  // ... (actualizar la función manejarEnvioFormulario para usar tasa por fecha)
+  // Función para mostrar error
+  mostrarError(mensaje) {
+    document.getElementById('transaccionesContent').innerHTML = `
+      <div class="alert alert-danger">
+        <strong>Error:</strong> ${mensaje}
+      </div>
+    `;
+  },
+
+  // Función para actualizar estado del botón
+  actualizarEstadoBoton() {
+    const boton = document.getElementById('mostrarFormTransaccion');
+    if (this.tokenActual) {
+      boton.innerHTML = '<i class="bi bi-plus-circle"></i> Agregar Transacción (Token ✓)';
+      boton.className = 'btn btn-success';
+    } else {
+      boton.innerHTML = '<i class="bi bi-plus-circle"></i> Agregar Nueva Transacción';
+      boton.className = 'btn btn-primary';
+    }
+  },
+
+  // Función para mostrar/ocultar formulario
+  toggleFormulario() {
+    const form = document.getElementById('formTransaccion');
+    const boton = document.getElementById('mostrarFormTransaccion');
+    
+    if (form.style.display === 'none') {
+      // Si no tenemos token, solicitarlo antes de mostrar el formulario
+      if (!this.tokenActual) {
+        this.solicitarTokenInicial();
+        return;
+      }
+      
+      // Si tenemos token, mostrar formulario directamente
+      form.style.display = 'block';
+      boton.innerHTML = '<i class="bi bi-dash-circle"></i> Ocultar Formulario';
+      // Establecer fecha actual por defecto
+      document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+      // Enfocar el campo de descripción
+      document.getElementById('descripcion').focus();
+    } else {
+      form.style.display = 'none';
+      this.actualizarEstadoBoton();
+      this.limpiarFormulario();
+    }
+  },
+
+  // Función para solicitar token inicial
+  async solicitarTokenInicial() {
+    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para agregar transacciones:');
+    if (!githubToken) {
+      return;
+    }
+    
+    const feedback = document.getElementById('transaccionesContent');
+    
+    try {
+      // Mostrar mensaje de verificación
+      const contenidoOriginal = feedback.innerHTML;
+      feedback.innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Verificando token...</span>
+          </div>
+          <p class="mt-2">Verificando token de GitHub...</p>
+        </div>
+      `;
+      
+      // Verificar token
+      const tokenValido = await this.verificarToken(githubToken);
+      if (!tokenValido) {
+        throw new Error('Token inválido o sin permisos suficientes');
+      }
+      
+      // Guardar token
+      this.tokenActual = githubToken;
+      
+      // Restaurar contenido y mostrar formulario
+      this.mostrarTransacciones((await fetch('json/transacciones.json').then(r => r.json())).transacciones);
+      
+      // Mostrar mensaje de éxito
+      setTimeout(() => {
+        const alerta = document.createElement('div');
+        alerta.className = 'alert alert-success alert-dismissible fade show';
+        alerta.innerHTML = `
+          <strong>✓ Token verificado correctamente</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.getElementById('transaccionesContent').prepend(alerta);
+      }, 100);
+      
+      // Mostrar formulario
+      this.toggleFormulario();
+      
+    } catch (error) {
+      console.error('Error verificando token:', error);
+      this.mostrarError(`Error al verificar token: ${error.message}`);
+      // Recargar transacciones después de 3 segundos
+      setTimeout(() => {
+        this.cargarTransacciones();
+      }, 3000);
+    }
+  },
+
+  // Función para limpiar formulario
+  limpiarFormulario() {
+    document.getElementById('nuevaTransaccionForm').reset();
+    document.getElementById('feedbackTransaccion').innerHTML = '';
+  },
 
   // Función para manejar envío del formulario (SIN solicitar token nuevamente)
   async manejarEnvioFormulario(event) {
@@ -350,5 +458,248 @@ const transacciones = {
     }
   },
 
-  // ... (el resto de las funciones permanecen igual)
+  // Función para verificar token
+  async verificarToken(githubToken) {
+    try {
+      const tokenLimpio = githubToken.trim();
+      
+      if (!tokenLimpio.startsWith('github_pat_')) {
+        throw new Error('Formato de token incorrecto');
+      }
+      
+      const response = await fetch(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${tokenLimpio}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        }
+      );
+      
+      return response.ok;
+      
+    } catch (error) {
+      console.error('Error verificando token:', error);
+      return false;
+    }
+  },
+
+  // Función para llamar a la API de GitHub
+  async llamarGitHubAPI(url, options = {}) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Authorization': `Bearer ${options.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`GitHub API Error: ${response.status} - ${errorData.message}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error en llamarGitHubAPI:', error);
+      throw error;
+    }
+  },
+
+  // Función para guardar en GitHub
+  async guardarEnGitHub(nuevaTransaccion, githubToken) {
+    try {
+      console.log('Iniciando guardado en GitHub...');
+      
+      const tokenLimpio = githubToken.trim();
+      
+      // Verificar formato del token
+      if (!tokenLimpio.startsWith('github_pat_')) {
+        throw new Error('Formato de token incorrecto. Debe ser un Fine-Grained Token que empiece con "github_pat_"');
+      }
+
+      // 1. Obtener el archivo actual
+      let fileData;
+      try {
+        fileData = await this.llamarGitHubAPI(
+          `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+          { token: tokenLimpio }
+        );
+        console.log('✓ Archivo actual obtenido');
+      } catch (error) {
+        if (error.message.includes('404')) {
+          console.log('Archivo no existe, creando nuevo...');
+          return await this.crearNuevoArchivo(nuevaTransaccion, tokenLimpio);
+        }
+        throw error;
+      }
+      
+      // 2. Actualizar el contenido
+      const contenidoActual = JSON.parse(atob(fileData.content));
+      
+      // Calcular el nuevo saldo
+      const saldoAnterior = contenidoActual.transacciones.length > 0 
+        ? contenidoActual.transacciones[0].saldo 
+        : 0;
+      
+      nuevaTransaccion.saldo = nuevaTransaccion.ingreso > 0 
+        ? saldoAnterior + nuevaTransaccion.ingreso
+        : saldoAnterior - nuevaTransaccion.egreso;
+      
+      // Agregar la nueva transacción al inicio
+      contenidoActual.transacciones.unshift(nuevaTransaccion);
+      
+      // 3. Actualizar el archivo en GitHub
+      const datosActualizacion = {
+        message: `Agregar transacción: ${nuevaTransaccion.descripcion}`,
+        content: btoa(JSON.stringify(contenidoActual, null, 2)),
+        sha: fileData.sha,
+        branch: this.GITHUB_CONFIG.BRANCH
+      };
+      
+      await this.llamarGitHubAPI(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+        {
+          token: tokenLimpio,
+          method: 'PUT',
+          body: JSON.stringify(datosActualizacion)
+        }
+      );
+      
+      console.log('✓ Archivo actualizado exitosamente');
+      return { success: true };
+      
+    } catch (error) {
+      console.error('Error completo en guardarEnGitHub:', error);
+      
+      // Mensajes de error más específicos
+      if (error.message.includes('401')) {
+        throw new Error('Token inválido o expirado. Verifique las credenciales.');
+      } else if (error.message.includes('403')) {
+        throw new Error('Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".');
+      } else if (error.message.includes('404')) {
+        throw new Error('Repositorio no encontrado. Verifique que "suarezfco/nelly" exista.');
+      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        throw new Error('Error de conexión. Verifique su conexión a internet o problemas de CORS.');
+      } else {
+        throw new Error(`Error al guardar en GitHub: ${error.message}`);
+      }
+    }
+  },
+
+  // Función para crear nuevo archivo si no existe
+  async crearNuevoArchivo(nuevaTransaccion, githubToken) {
+    try {
+      // Calcular saldo inicial
+      nuevaTransaccion.saldo = nuevaTransaccion.ingreso > 0 
+        ? nuevaTransaccion.ingreso 
+        : -nuevaTransaccion.egreso;
+      
+      const contenidoInicial = {
+        transacciones: [nuevaTransaccion]
+      };
+      
+      const datosCreacion = {
+        message: `Crear archivo de transacciones: ${nuevaTransaccion.descripcion}`,
+        content: btoa(JSON.stringify(contenidoInicial, null, 2)),
+        branch: this.GITHUB_CONFIG.BRANCH
+      };
+      
+      await this.llamarGitHubAPI(
+        `https://api.github.com/repos/${this.GITHUB_CONFIG.OWNER}/${this.GITHUB_CONFIG.REPO}/contents/${this.GITHUB_CONFIG.FILE_PATH}`,
+        {
+          token: githubToken,
+          method: 'PUT',
+          body: JSON.stringify(datosCreacion)
+        }
+      );
+      
+      console.log('✓ Nuevo archivo creado exitosamente');
+      return { success: true };
+      
+    } catch (error) {
+      console.error('Error en crearNuevoArchivo:', error);
+      throw error;
+    }
+  },
+
+  // Función para esperar a que termine el commit de GitHub
+  async esperarCommit(commitUrl, githubToken, timeout = 30000) {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < timeout) {
+      try {
+        const response = await fetch(commitUrl, {
+          headers: {
+            'Authorization': `Bearer ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        });
+        
+        if (response.ok) {
+          const commitData = await response.json();
+          // Verificar si el commit está completo (status puede variar según el estado)
+          if (commitData.status && commitData.status === 'completed') {
+            return true;
+          }
+          
+          // Si no hay status, asumimos que está completo después de un breve delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return true;
+        }
+      } catch (error) {
+        console.log('Esperando commit...');
+      }
+      
+      // Esperar 1 segundo antes de revisar nuevamente
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    throw new Error('Timeout esperando el commit');
+  },
+
+  // Función para inicializar eventos
+  inicializarEventos() {
+    // Botón para mostrar/ocultar formulario
+    document.getElementById('mostrarFormTransaccion').addEventListener('click', () => {
+      this.toggleFormulario();
+    });
+    
+    // Botón cancelar
+    document.getElementById('cancelarTransaccion').addEventListener('click', () => {
+      this.toggleFormulario();
+    });
+    
+    // Formulario de envío
+    document.getElementById('nuevaTransaccionForm').addEventListener('submit', (e) => {
+      this.manejarEnvioFormulario(e);
+    });
+    
+    // Botón para limpiar token (opcional - para debugging)
+    const btnLimpiarToken = document.createElement('button');
+    btnLimpiarToken.className = 'btn btn-outline-secondary btn-sm ms-2';
+    btnLimpiarToken.innerHTML = '<i class="bi bi-x-circle"></i> Limpiar Token';
+    btnLimpiarToken.addEventListener('click', () => {
+      this.tokenActual = null;
+      this.actualizarEstadoBoton();
+      this.cargarTransacciones(); // Recargar para quitar el badge de token activo
+      alert('Token limpiado. Debe ingresarlo nuevamente para agregar transacciones.');
+    });
+    
+    document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
+  },
+
+  // Inicializar pestaña de transacciones
+  inicializar() {
+    this.inicializarEventos();
+    this.cargarTransacciones();
+    console.log('Pestaña "Transacciones" inicializada');
+  }
 };
