@@ -1,6 +1,13 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-11-23",
+      "descripcion": "Pago a Rosneify Rendon",
+      "ingreso": 0,
+      "egreso": 3650,
+      "saldo": 2540
+    },
+    {
       "fecha": "2025-11-20",
       "descripcion": "Compra farmatodo",
       "ingreso": 0,
@@ -34,7 +41,7 @@
       "ingreso": 0,
       "egreso": 0,
       "saldo": 1850
-    },    
+    },
     {
       "fecha": "2025-11-02",
       "descripcion": "Envio dinero Ana Maria",
@@ -77,14 +84,14 @@
       "egreso": 1709,
       "saldo": 18649
     },
-     {
+    {
       "fecha": "2025-09-18",
       "descripcion": "Ingreso Mercantil",
       "ingreso": 17700,
       "egreso": 0,
       "saldo": 20409
     },
-   {
+    {
       "fecha": "2025-09-17",
       "descripcion": "Compra Pañales",
       "ingreso": 0,
