@@ -743,7 +743,7 @@ mostrarTransacciones(transacciones) {
     document.querySelector('#transacciones .mt-3').appendChild(btnLimpiarToken);
   },
 // Agregar también un listener para redimensionamiento de ventana
-inicializarEventos() {
+inicializar() {
   // Botón para mostrar/ocultar formulario
   document.getElementById('mostrarFormTransaccion').addEventListener('click', () => {
     this.toggleFormulario();
