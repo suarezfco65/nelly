@@ -311,7 +311,7 @@ const datosBasicos = {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>`;
             
     elements.datosContent.innerHTML = formularioHTML;
 
