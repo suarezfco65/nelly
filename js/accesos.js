@@ -14,41 +14,33 @@ const accesos = {
   },
 
   // --- Renderizado (Modo Lectura) ---
-  renderizarAccesos(accesos) {
-    this.isModifying = false;
+renderizarAccesos(accesos) {
+  this.isModifying = false;
 
-    const tableRows = accesos
-      .map(
-        (item, index) => `
+  const tableRows = accesos
+    .map(
+      (item, index) => `
             <tr data-index="${index}">
                 <td>
-                    <a href="${item.url}" target="_blank" title="Abrir ${
-          item.sistema
-        }">${item.sistema} 
+                    <a href="${item.url}" target="_blank" title="Abrir ${item.sistema}">${item.sistema} 
                         <i class="bi bi-box-arrow-up-right small"></i>
                     </a>
                 </td>
                 <td>${item.usuario}</td>
                 <td>
-                    <span class="masked sensitive" data-value="${
-                      item.clave
-                    }">••••••••</span>
+                    <span class="masked sensitive" data-value="${item.clave}">••••••••</span>
                 </td>
-                <td>
-                    <span title="${item.observaciones}">
-                        ${
-                          item.observaciones.length > 50
-                            ? item.observaciones.substring(0, 50) + "..."
-                            : item.observaciones
-                        }
-                    </span>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-info btn-ver-detalles" data-index="${index}" title="Ver detalles">
+                        <i class="bi bi-eye"></i> Detalles
+                    </button>
                 </td>
             </tr>
         `
-      )
-      .join("");
+    )
+    .join("");
 
-    const tableHTML = `
+  const tableHTML = `
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
@@ -56,7 +48,7 @@ const accesos = {
                             <th>Sistema</th>
                             <th>Usuario</th>
                             <th>Contraseña</th>
-                            <th>Observaciones</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="accesosTableBody">
@@ -73,15 +65,22 @@ const accesos = {
             <div id="feedbackAccesos" class="mt-3"></div>
         `;
 
-    this.container.innerHTML = tableHTML;
+  this.container.innerHTML = tableHTML;
 
-    document
-      .getElementById("btnModificarAccesos")
-      ?.addEventListener("click", () => {
-        // Delega la solicitud de token a datosBasicos
-        datosBasicos.solicitarTokenModificacion();
-      });
-  },
+  // Agregar event listeners para los botones de detalles
+  this.container.querySelectorAll('.btn-ver-detalles').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = e.target.closest('button').getAttribute('data-index');
+      this.mostrarModalDetalles(this.datosAccesos[index]);
+    });
+  });
+
+  document
+    .getElementById("btnModificarAccesos")
+    ?.addEventListener("click", () => {
+      datosBasicos.solicitarTokenModificacion();
+    });
+},
 
   // --- Renderizado (Modo Edición) ---
   renderizarFormularioModificacion(accesos) {
