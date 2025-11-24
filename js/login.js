@@ -76,7 +76,7 @@ function toggleSeccionCambiarClave(e) {
 async function verificarPrimeraVez() {
   try {
     // Usa la ruta centralizada de CONFIG (asumido global)
-    const response = await fetch(CONFIG.DATOS_ENCRIPTADOS_PATH);
+    const response = await fetch(CONFIG.DATOS_ENCRYPTED_PATH);
     if (!response.ok) {
       // Archivo no existe o hay un error (ej. 404)
       mensajePrimeraVez.classList.remove("d-none");
@@ -136,7 +136,7 @@ async function procesarLogin(clave) {
     let archivoEncriptadoExiste = false;
     try {
       // Usa la ruta centralizada
-      const testResponse = await fetch(CONFIG.DATOS_ENCRIPTADOS_PATH);
+      const testResponse = await fetch(CONFIG.DATOS_ENCRYPTED_PATH);
       archivoEncriptadoExiste = testResponse.ok;
     } catch (error) {
       archivoEncriptadoExiste = false;
@@ -161,7 +161,7 @@ async function procesarLogin(clave) {
     } else {
       // NO ES PRIMERA VEZ
       // Usa la ruta centralizada
-      const response = await fetch(CONFIG.DATOS_ENCRIPTADOS_PATH);
+      const response = await fetch(CONFIG.DATOS_ENCRYPTED_PATH);
       if (!response.ok) {
         throw new Error("Error al cargar los datos encriptados");
       }
@@ -222,7 +222,7 @@ async function cambiarClaveYMigrar(claveActual, claveNueva, tokenGitHub) {
 
     // 2. Cargar y Desencriptar con la clave actual
     // Usa la ruta centralizada
-    const response = await fetch(CONFIG.DATOS_ENCRIPTADOS_PATH);
+    const response = await fetch(CONFIG.DATOS_ENCRYPTED_PATH);
     if (!response.ok) {
       // Si el archivo encriptado no existe, cargamos el archivo inicial para migrar
       // Usa la ruta centralizada
@@ -262,7 +262,7 @@ async function cambiarClaveYMigrar(claveActual, claveNueva, tokenGitHub) {
     // Usa la ruta centralizada
     const commitMessage = `Cambio de clave y migración de datos básicos por ${datos.nombre}`;
     await github.guardarArchivo(
-      CONFIG.DATOS_ENCRIPTADOS_PATH,
+      CONFIG.DATOS_ENCRYPTED_PATH,
       datosEncriptadosBase64ForAPI, // <-- Usar la cadena con Base64 doble
       tokenGitHub,
       commitMessage
