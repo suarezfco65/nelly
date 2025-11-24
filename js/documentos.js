@@ -4,6 +4,7 @@ const documentos = {
   documentosList: [],
   tokenActual: null,
   isModifying: false,
+  container:null,
 
   // Función para determinar el tipo de archivo
   obtenerTipoArchivo(nombreArchivo) {
@@ -99,7 +100,13 @@ const documentos = {
       </div>
     `;
 
-    document.getElementById("docs").querySelector(".tab-pane").innerHTML = containerHTML;
+    // ✅ CORREGIR: Usar this.container en lugar de buscar por ID
+    if (this.container) {
+      this.container.innerHTML = containerHTML;
+    } else {
+      console.error("No se encontró el contenedor de documentos");
+      return;
+    }
 
     // Event listeners
     this.inicializarEventosDocumentos();
@@ -183,7 +190,10 @@ const documentos = {
       </div>
     `;
 
-    document.getElementById("docs").querySelector(".tab-pane").innerHTML = containerHTML;
+    // ✅ CORREGIR: Usar this.container
+    if (this.container) {
+      this.container.innerHTML = containerHTML;
+    }
 
     // Event listeners
     document.getElementById("formModificarDocumentos")?.addEventListener("submit", (e) => {
@@ -403,7 +413,14 @@ const documentos = {
   },
 
   // Inicializar pestaña de documentos
-  inicializar() {
+    inicializar() {
+    // ✅ CORREGIR: Establecer el contenedor primero
+    this.container = document.getElementById("docsContent");
+    if (!this.container) {
+      console.error("No se encontró el contenedor docsContent");
+      return;
+    }
+    
     this.cargarDocumentosIniciales();
     console.log('Pestaña "Documentos" inicializada con gestión CRUD');
   },
