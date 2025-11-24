@@ -12,14 +12,89 @@ const accesos = {
     this.container = elements.accesosContent;
     this.renderizarAccesos(this.datosAccesos);
   },
+  // accesos.js - Agregar esta nueva función
+  mostrarModalDetalles(acceso) {
+    const modalHTML = `
+    <div class="modal fade" id="detallesAccesoModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">
+              <i class="bi bi-info-circle"></i> Detalles de Acceso - ${
+                acceso.sistema
+              }
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="text-muted">Información Básica</h6>
+                <table class="table table-sm table-borderless">
+                  <tr>
+                    <td><strong>Sistema:</strong></td>
+                    <td>${acceso.sistema}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>URL:</strong></td>
+                    <td><a href="${acceso.url}" target="_blank">${
+      acceso.url
+    } <i class="bi bi-box-arrow-up-right small"></i></a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Usuario:</strong></td>
+                    <td>${acceso.usuario}</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-muted">Observaciones</h6>
+                <div class="border rounded p-3 bg-light">
+                  ${
+                    acceso.observaciones
+                      ? `<p class="mb-0">${acceso.observaciones}</p>`
+                      : '<p class="text-muted mb-0"><em>Sin observaciones</em></p>'
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle"></i> Cerrar
+            </button>
+            <a href="${acceso.url}" target="_blank" class="btn btn-primary">
+              <i class="bi bi-box-arrow-up-right"></i> Ir al Sistema
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+    // Remover modal anterior si existe
+    const modalExistente = document.getElementById("detallesAccesoModal");
+    if (modalExistente) {
+      modalExistente.remove();
+    }
+
+    // Agregar nuevo modal al DOM
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+    // Mostrar modal
+    const modal = new bootstrap.Modal(
+      document.getElementById("detallesAccesoModal")
+    );
+    modal.show();
+  },
 
   // --- Renderizado (Modo Lectura) ---
-renderizarAccesos(accesos) {
-  this.isModifying = false;
+  renderizarAccesos(accesos) {
+    this.isModifying = false;
 
-  const tableRows = accesos
-    .map(
-      (item, index) => `
+    const tableRows = accesos
+      .map(
+        (item, index) => `
             <tr data-index="${index}">
                 <td>
                     <a href="${item.url}" target="_blank" title="Abrir ${item.sistema}">${item.sistema} 
@@ -37,10 +112,10 @@ renderizarAccesos(accesos) {
                 </td>
             </tr>
         `
-    )
-    .join("");
+      )
+      .join("");
 
-  const tableHTML = `
+    const tableHTML = `
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
@@ -65,98 +140,31 @@ renderizarAccesos(accesos) {
             <div id="feedbackAccesos" class="mt-3"></div>
         `;
 
-  this.container.innerHTML = tableHTML;
+    this.container.innerHTML = tableHTML;
 
-  // Agregar event listeners para los botones de detalles
-  this.container.querySelectorAll('.btn-ver-detalles').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const index = e.target.closest('button').getAttribute('data-index');
-      this.mostrarModalDetalles(this.datosAccesos[index]);
+    // Agregar event listeners para los botones de detalles
+    this.container.querySelectorAll(".btn-ver-detalles").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const index = e.target.closest("button").getAttribute("data-index");
+        this.mostrarModalDetalles(this.datosAccesos[index]);
+      });
     });
-  });
 
-  document
-    .getElementById("btnModificarAccesos")
-    ?.addEventListener("click", () => {
-      datosBasicos.solicitarTokenModificacion();
-    });
-},
-// accesos.js - Agregar esta nueva función
-mostrarModalDetalles(acceso) {
-  const modalHTML = `
-    <div class="modal fade" id="detallesAccesoModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title">
-              <i class="bi bi-info-circle"></i> Detalles de Acceso - ${acceso.sistema}
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row">
-              <div class="col-md-6">
-                <h6 class="text-muted">Información Básica</h6>
-                <table class="table table-sm table-borderless">
-                  <tr>
-                    <td><strong>Sistema:</strong></td>
-                    <td>${acceso.sistema}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>URL:</strong></td>
-                    <td><a href="${acceso.url}" target="_blank">${acceso.url} <i class="bi bi-box-arrow-up-right small"></i></a></td>
-                  </tr>
-                  <tr>
-                    <td><strong>Usuario:</strong></td>
-                    <td>${acceso.usuario}</td>
-                  </tr>
-                </table>
-              </div>
-              <div class="col-md-6">
-                <h6 class="text-muted">Observaciones</h6>
-                <div class="border rounded p-3 bg-light">
-                  ${acceso.observaciones ? 
-                    `<p class="mb-0">${acceso.observaciones}</p>` : 
-                    '<p class="text-muted mb-0"><em>Sin observaciones</em></p>'
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              <i class="bi bi-x-circle"></i> Cerrar
-            </button>
-            <a href="${acceso.url}" target="_blank" class="btn btn-primary">
-              <i class="bi bi-box-arrow-up-right"></i> Ir al Sistema
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+    document
+      .getElementById("btnModificarAccesos")
+      ?.addEventListener("click", () => {
+        datosBasicos.solicitarTokenModificacion();
+      });
+  },
 
-  // Remover modal anterior si existe
-  const modalExistente = document.getElementById('detallesAccesoModal');
-  if (modalExistente) {
-    modalExistente.remove();
-  }
-
-  // Agregar nuevo modal al DOM
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  
-  // Mostrar modal
-  const modal = new bootstrap.Modal(document.getElementById('detallesAccesoModal'));
-  modal.show();
-},
   // --- Renderizado (Modo Edición) ---
-renderizarFormularioModificacion(accesos) {
-  this.datosAccesos = accesos;
-  this.isModifying = true;
+  renderizarFormularioModificacion(accesos) {
+    this.datosAccesos = accesos;
+    this.isModifying = true;
 
-  const tableRows = accesos
-    .map(
-      (item, index) => `
+    const tableRows = accesos
+      .map(
+        (item, index) => `
             <tr data-index="${index}" class="fila-acceso-mod">
                 <td><input type="text" class="form-control form-control-sm input-sistema" value="${item.sistema}" required></td>
                 <td><input type="url" class="form-control form-control-sm input-url" value="${item.url}" required></td>
@@ -170,10 +178,10 @@ renderizarFormularioModificacion(accesos) {
                 </td>
             </tr>
         `
-    )
-    .join("");
+      )
+      .join("");
 
-  const tableHTML = `
+    const tableHTML = `
             <div class="card border-warning">
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
@@ -220,23 +228,23 @@ renderizarFormularioModificacion(accesos) {
             </div>
         `;
 
-  this.container.innerHTML = tableHTML;
+    this.container.innerHTML = tableHTML;
 
-  // Inicializar eventos en modo modificación
-  document
-    .getElementById("formModificarAccesos")
-    ?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      this.manejarGuardadoAccesos();
-    });
-  document
-    .getElementById("btnCancelarModAccesos")
-    ?.addEventListener("click", () => this.cancelarModificacion());
-  document
-    .getElementById("btnAddAcceso")
-    ?.addEventListener("click", () => this.agregarNuevoAcceso());
-  this.inicializarEventosModificacion();
-},
+    // Inicializar eventos en modo modificación
+    document
+      .getElementById("formModificarAccesos")
+      ?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.manejarGuardadoAccesos();
+      });
+    document
+      .getElementById("btnCancelarModAccesos")
+      ?.addEventListener("click", () => this.cancelarModificacion());
+    document
+      .getElementById("btnAddAcceso")
+      ?.addEventListener("click", () => this.agregarNuevoAcceso());
+    this.inicializarEventosModificacion();
+  },
 
   // --- Lógica de Modificación Dinámica de Accesos ---
   agregarNuevoAcceso() {
