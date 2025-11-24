@@ -290,7 +290,7 @@ const datosBasicos = {
                 <div id="addCampoForm" class="p-3 border rounded d-none">
                     <div class="row g-2">
                         <div class="col-md-4">
-                            <input type="text" class="form-control form-control-sm" id="newCampoNombre" placeholder="Nombre del nuevo campo" required>
+                            <input type="text" class="form-control form-control-sm" id="newCampoNombre" placeholder="Nombre del nuevo campo">
                         </div>
                         <div class="col-md-3">
                             <select class="form-select form-select-sm" id="newCampoTipo">
@@ -312,21 +312,7 @@ const datosBasicos = {
                     </div>
                 </div>
             </div>
-
-            <div class="mt-4">
-              <button type="submit" class="btn btn-success">
-                <i class="bi bi-check-circle"></i> Guardar Cambios
-              </button>
-              <button type="button" id="btnCancelarModificacionBasicos" class="btn btn-secondary">
-                <i class="bi bi-x-circle"></i> Cancelar
-              </button>
-            </div>
-          </form>
-          <div id="feedbackModificacionBasicos" class="mt-3"></div>
-        </div>
-      </div>
-    `;
-
+            
     elements.datosContent.innerHTML = formularioHTML;
 
     // Inicializar eventos del formulario
