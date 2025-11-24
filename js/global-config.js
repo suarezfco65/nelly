@@ -10,6 +10,7 @@ const CONFIG = {
     OWNER: "suarezfco65",
     REPO: "nelly",
     BRANCH: "main",
+    FILE_PATH: "json/datos-basicos-encriptado.json"
     API_BASE: "https://api.github.com/repos/suarezfco65/nelly",
   },
 };
