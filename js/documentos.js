@@ -396,6 +396,15 @@ const documentos = {
     });
   },
 
+    // Inicializar eventos de documentos (para modo lectura)
+  inicializarEventosDocumentos() {
+    if (this.container) {
+      this.container.querySelectorAll(".doc-item").forEach((item) => {
+        item.addEventListener("click", () => this.abrirDocumento(item));
+      });
+    }
+  },
+
   // Cargar documentos iniciales
   cargarDocumentosIniciales() {
     // Documentos por defecto
