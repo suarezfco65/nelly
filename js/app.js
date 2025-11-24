@@ -1,19 +1,3 @@
-// app.js (CORREGIDO)
-
-// Configuración global
-const CONFIG = {
-  // Se mantienen las URLs para compatibilidad en la carga/migración
-  JSON_URL: "json/datos-basicos.json",
-  DATOS_ENCRYPTED_PATH: "json/datos-basicos-encriptado.json",
-  LOGIN_URL: "login.html",
-  // Simulación de configuración de GitHub
-  GITHUB: {
-    OWNER: "suarezfco65",
-    REPO: "nelly",
-    FILE_PATH: "json/datos-basicos-encriptado.json",
-    API_BASE: "https://api.github.com/repos/suarezfco65/nelly",
-  },
-};
 
 // Se definen con 'let' para poder asignarles la instancia de Modal más tarde
 let docModalInstance;
