@@ -8,7 +8,21 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
     <link href="css/styles.css" rel="stylesheet" />
+    <style>
+      /* Estilos para manejar el ancho de inputs en la nueva tabla de accesos */
+      .table td {
+        vertical-align: middle;
+      }
+      .table .input-url,
+      .table .input-observaciones {
+        min-width: 150px;
+      }
+    </style>
   </head>
   <body class="bg-light">
     <div class="container py-5">
@@ -19,7 +33,6 @@
               <h4 class="mb-0">Información de Nelly Quiroz</h4>
             </div>
             <div class="card-body">
-              <!-- Nav tabs -->
               <ul class="nav nav-tabs" id="mainTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                   <button
@@ -33,6 +46,34 @@
                     aria-selected="true"
                   >
                     Datos Básicos
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="accesos-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#accesos"
+                    type="button"
+                    role="tab"
+                    aria-controls="accesos"
+                    aria-selected="false"
+                  >
+                    Accesos a Sistemas
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="transacciones-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#transacciones"
+                    type="button"
+                    role="tab"
+                    aria-controls="transacciones"
+                    aria-selected="false"
+                  >
+                    Transacciones
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -63,24 +104,14 @@
                     Compras
                   </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    id="transacciones-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#transacciones"
-                    type="button"
-                    role="tab"
-                    aria-controls="transacciones"
-                    aria-selected="false"
-                  >
-                    Transacciones
+                <li class="nav-item ms-auto">
+                  <button id="logoutBtn" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-box-arrow-right"></i> Salir
                   </button>
                 </li>
               </ul>
 
-              <div class="tab-content mt-4" id="mainTabsContent">
-                <!-- Tab 1: Datos Básicos -->
+              <div class="tab-content pt-3">
                 <div
                   class="tab-pane fade show active"
                   id="datos"
@@ -88,19 +119,125 @@
                   aria-labelledby="datos-tab"
                 >
                   <div id="datosContent">
-                    <!-- Los datos se cargarán aquí dinámicamente -->
-                    <div class="text-center py-4">
-                      <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Cargando datos...</span>
+                    <div class="text-center p-5">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
                       </div>
-                      <p class="mt-2">Cargando información...</p>
+                      <p class="mt-2">Cargando datos básicos...</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="tab-pane fade"
+                  id="accesos"
+                  role="tabpanel"
+                  aria-labelledby="accesos-tab"
+                >
+                  <div id="accesosContent">
+                    <div class="text-center p-5">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                      </div>
+                      <p class="mt-2">Cargando accesos...</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="tab-pane fade"
+                  id="transacciones"
+                  role="tabpanel"
+                  aria-labelledby="transacciones-tab"
+                >
+                  <div class="mb-3">
+                    <button id="mostrarFormTransaccion" class="btn btn-primary">
+                      Agregar Nueva Transacción
+                    </button>
+                  </div>
+
+                  <div id="formTransaccion" class="mb-4" style="display: none">
+                    <div class="card">
+                      <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Nueva Transacción</h6>
+                      </div>
+                      <div class="card-body">
+                        <form id="nuevaTransaccionForm">
+                          <div class="row">
+                            <div class="col-md-3">
+                              <label for="fecha" class="form-label"
+                                >Fecha</label
+                              >
+                              <input
+                                type="date"
+                                class="form-control"
+                                id="fecha"
+                                required
+                              />
+                            </div>
+                            <div class="col-md-6">
+                              <label for="descripcion" class="form-label"
+                                >Descripción</label
+                              >
+                              <input
+                                type="text"
+                                class="form-control"
+                                id="descripcion"
+                                required
+                              />
+                            </div>
+                            <div class="col-md-3">
+                              <label for="tipo" class="form-label">Tipo</label>
+                              <select class="form-select" id="tipo" required>
+                                <option value="ingreso">Ingreso</option>
+                                <option value="egreso">Egreso</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="row mt-2">
+                            <div class="col-md-6">
+                              <label for="monto" class="form-label"
+                                >Monto (Bs)</label
+                              >
+                              <input
+                                type="number"
+                                step="0.01"
+                                class="form-control"
+                                id="monto"
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <button type="submit" class="btn btn-success">
+                              Agregar Transacción
+                            </button>
+                            <button
+                              type="button"
+                              id="cancelarTransaccion"
+                              class="btn btn-secondary"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+                        <div id="feedbackTransaccion" class="mt-2"></div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- SE ELIMINÓ LA SECCIÓN DE CLAVE MAESTRA -->
+                  <div id="transaccionesContent">
+                    <div class="text-center py-4">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden"
+                          >Cargando transacciones...</span
+                        >
+                      </div>
+                      <p class="mt-2">Cargando transacciones...</p>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Tab 2: Documentos -->
                 <div
                   class="tab-pane fade"
                   id="docs"
@@ -179,7 +316,6 @@
                   </div>
                 </div>
 
-                <!-- Tab 3: Compras -->
                 <div
                   class="tab-pane fade"
                   id="compras"
@@ -209,109 +345,8 @@
                     dinámica desde el servidor.
                   </div>
                 </div>
-
-                <!-- Tab 4: Transacciones -->
-                <div
-                  class="tab-pane fade"
-                  id="transacciones"
-                  role="tabpanel"
-                  aria-labelledby="transacciones-tab"
-                >
-                  <!-- Botón para mostrar formulario -->
-                  <div class="mb-3">
-                    <button id="mostrarFormTransaccion" class="btn btn-primary">
-                      Agregar Nueva Transacción
-                    </button>
-                  </div>
-
-                  <!-- Formulario para agregar transacciones (inicialmente oculto) -->
-                  <div id="formTransaccion" class="mb-4" style="display: none">
-                    <div class="card">
-                      <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0">Nueva Transacción</h6>
-                      </div>
-                      <div class="card-body">
-                        <form id="nuevaTransaccionForm">
-                          <div class="row">
-                            <div class="col-md-3">
-                              <label for="fecha" class="form-label"
-                                >Fecha</label
-                              >
-                              <input
-                                type="date"
-                                class="form-control"
-                                id="fecha"
-                                required
-                              />
-                            </div>
-                            <div class="col-md-6">
-                              <label for="descripcion" class="form-label"
-                                >Descripción</label
-                              >
-                              <input
-                                type="text"
-                                class="form-control"
-                                id="descripcion"
-                                required
-                              />
-                            </div>
-                            <div class="col-md-3">
-                              <label for="tipo" class="form-label">Tipo</label>
-                              <select class="form-select" id="tipo" required>
-                                <option value="ingreso">Ingreso</option>
-                                <option value="egreso">Egreso</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div class="row mt-2">
-                            <div class="col-md-6">
-                              <label for="monto" class="form-label"
-                                >Monto (Bs)</label
-                              >
-                              <input
-                                type="number"
-                                step="0.01"
-                                class="form-control"
-                                id="monto"
-                                required
-                              />
-                            </div>
-                          </div>
-                          <div class="mt-3">
-                            <button type="submit" class="btn btn-success">
-                              Agregar Transacción
-                            </button>
-                            <button
-                              type="button"
-                              id="cancelarTransaccion"
-                              class="btn btn-secondary"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        </form>
-                        <div id="feedbackTransaccion" class="mt-2"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div id="transaccionesContent">
-                    <!-- Los datos se cargarán aquí dinámicamente -->
-                    <div class="text-center py-4">
-                      <div class="spinner-border" role="status">
-                        <span class="visually-hidden"
-                          >Cargando transacciones...</span
-                        >
-                      </div>
-                      <p class="mt-2">Cargando transacciones...</p>
-                    </div>
-                  </div>
-                </div>
               </div>
-              <!-- tab-content -->
             </div>
-            <!-- card-body -->
-
             <div class="card-footer text-muted small">
               Proteja esta página y evite compartir la clave con terceros.
             </div>
@@ -320,7 +355,6 @@
       </div>
     </div>
 
-    <!-- Modal para documentos -->
     <div class="modal fade" id="docModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -355,7 +389,6 @@
       </div>
     </div>
 
-    <!-- Modal XL para compras -->
     <div class="modal fade" id="compraModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -376,14 +409,13 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/globa-config.js"></script>
+    <script src="js/seguridad.js"></script>
     <script src="js/github.js"></script>
     <script src="js/datos-basicos.js"></script>
+    <script src="js/accesos.js"></script>
     <script src="js/documentos.js"></script>
     <script src="js/compras.js"></script>
-    <script src="js/seguridad.js"></script>
     <script src="js/transacciones.js"></script>
-    <!-- ← Agregar esta línea -->
     <script src="js/app.js"></script>
   </body>
 </html>
