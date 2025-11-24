@@ -1,10 +1,10 @@
-// documentos.js - VERSIÓN COMPLETA CON CRUD
+// documentos.js - VERSIÓN COMPLETA CON CRUD Y SUBIDA DE ARCHIVOS
 
 const documentos = {
   documentosList: [],
   tokenActual: null,
   isModifying: false,
-  container:null,
+  container: null,
 
   // Función para determinar el tipo de archivo
   obtenerTipoArchivo(nombreArchivo) {
@@ -22,6 +22,7 @@ const documentos = {
   // Función para abrir documento en modal
   abrirDocumento(elemento) {
     const archivo = elemento.getAttribute("data-file");
+    const rutaCompleta = archivo.startsWith('docs/') ? archivo : `docs/${archivo}`;
     const tipoArchivo = this.obtenerTipoArchivo(archivo);
 
     elements.docModalTitle.textContent = elemento.textContent.trim();
@@ -35,7 +36,7 @@ const documentos = {
       // Mostrar imagen
       elements.docIframe.style.display = "none";
       elements.docImage.style.display = "block";
-      elements.docImage.src = encodeURI(archivo);
+      elements.docImage.src = encodeURI(rutaCompleta);
       elements.docImage.alt = elemento.textContent.trim();
 
       // Configurar nuevo manejador de errores para esta imagen específica
@@ -50,7 +51,7 @@ const documentos = {
       // Mostrar PDF u otros archivos
       elements.docImage.style.display = "none";
       elements.docIframe.style.display = "block";
-      elements.docIframe.src = encodeURI(archivo);
+      elements.docIframe.src = encodeURI(rutaCompleta);
     }
 
     docModalInstance.show();
@@ -96,11 +97,10 @@ const documentos = {
       <div id="feedbackDocumentos" class="mt-3"></div>
 
       <div class="mt-3 text-muted small">
-        Nota: los nombres contienen espacios y caracteres especiales; el visor usa encodeURI al cargar el archivo para evitar errores.
+        Nota: Los archivos se almacenan en la carpeta docs/ y subcarpetas.
       </div>
     `;
 
-    // ✅ CORREGIR: Usar this.container en lugar de buscar por ID
     if (this.container) {
       this.container.innerHTML = containerHTML;
     } else {
@@ -129,7 +129,8 @@ const documentos = {
             </td>
             <td>
               <input type="text" class="form-control form-control-sm input-archivo" 
-                     value="${doc.archivo}" placeholder="ruta/archivo.ext" required>
+                     value="${doc.archivo}" placeholder="archivo.ext o subcarpeta/archivo.ext" required>
+              <small class="form-text text-muted">Ruta relativa desde docs/</small>
             </td>
             <td class="text-center">
               <span class="badge bg-secondary">${this.obtenerTipoArchivo(doc.archivo).toUpperCase()}</span>
@@ -160,7 +161,7 @@ const documentos = {
                 <thead>
                   <tr>
                     <th>Nombre</th>
-                    <th>Archivo (ruta)</th>
+                    <th>Archivo (ruta desde docs/)</th>
                     <th class="text-center">Tipo</th>
                     <th class="text-end">Acciones</th>
                   </tr>
@@ -180,9 +181,14 @@ const documentos = {
                   <i class="bi bi-x-circle"></i> Cancelar
                 </button>
               </div>
-              <button type="button" id="btnAddDocumento" class="btn btn-info">
-                <i class="bi bi-plus-circle"></i> Agregar Documento
-              </button>
+              <div>
+                <button type="button" id="btnAddDocumento" class="btn btn-info me-2">
+                  <i class="bi bi-plus-circle"></i> Agregar Documento
+                </button>
+                <button type="button" id="btnSubirArchivo" class="btn btn-primary">
+                  <i class="bi bi-upload"></i> Subir Archivo
+                </button>
+              </div>
             </div>
           </form>
           <div id="feedbackDocumentos" class="mt-3"></div>
@@ -190,7 +196,6 @@ const documentos = {
       </div>
     `;
 
-    // ✅ CORREGIR: Usar this.container
     if (this.container) {
       this.container.innerHTML = containerHTML;
     }
@@ -206,7 +211,163 @@ const documentos = {
     document.getElementById("btnAddDocumento")?.addEventListener("click", () => {
       this.agregarNuevoDocumento();
     });
+    document.getElementById("btnSubirArchivo")?.addEventListener("click", () => {
+      this.mostrarModalSubida();
+    });
+    
     this.inicializarEventosModificacion();
+  },
+
+  // Mostrar modal para subir archivo
+  mostrarModalSubida() {
+    const modalHTML = `
+      <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Subir Archivo a GitHub</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <form id="uploadForm">
+                <div class="mb-3">
+                  <label for="archivoInput" class="form-label">Seleccionar archivo</label>
+                  <input type="file" class="form-control" id="archivoInput" required>
+                </div>
+                <div class="mb-3">
+                  <label for="rutaDestino" class="form-label">Ruta de destino (desde docs/)</label>
+                  <input type="text" class="form-control" id="rutaDestino" 
+                         placeholder="subcarpeta/archivo.ext o archivo.ext" required>
+                  <small class="form-text text-muted">El archivo se guardará en: docs/[ruta ingresada]</small>
+                </div>
+                <div id="uploadFeedback"></div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-primary" id="btnSubirConfirmar">Subir Archivo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Agregar modal al DOM si no existe
+    if (!document.getElementById('uploadModal')) {
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+    
+    // Configurar evento de subida
+    document.getElementById('btnSubirConfirmar').onclick = () => {
+      this.subirArchivoGitHub();
+    };
+
+    uploadModal.show();
+  },
+
+  // Subir archivo a GitHub
+  async subirArchivoGitHub() {
+    const fileInput = document.getElementById('archivoInput');
+    const rutaDestino = document.getElementById('rutaDestino').value.trim();
+    const feedback = document.getElementById('uploadFeedback');
+
+    if (!fileInput.files.length) {
+      feedback.innerHTML = '<div class="alert alert-warning">Seleccione un archivo</div>';
+      return;
+    }
+
+    if (!rutaDestino) {
+      feedback.innerHTML = '<div class="alert alert-warning">Ingrese la ruta de destino</div>';
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const rutaCompleta = `docs/${rutaDestino}`;
+
+    try {
+      feedback.innerHTML = '<div class="alert alert-info">Subiendo archivo...</div>';
+
+      // Leer archivo como base64
+      const base64Content = await this.fileToBase64(file);
+
+      // Subir a GitHub
+      await github.guardarArchivo(
+        rutaCompleta,
+        base64Content.split(',')[1], // Remover el prefijo data:...
+        this.tokenActual,
+        `Subir archivo: ${rutaDestino}`
+      );
+
+      feedback.innerHTML = '<div class="alert alert-success">Archivo subido exitosamente</div>';
+      
+      // Cerrar modal después de 2 segundos
+      setTimeout(() => {
+        bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+        // Agregar el nuevo archivo a la lista
+        this.agregarDocumentoDesdeSubida(file.name, rutaDestino);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error subiendo archivo:', error);
+      feedback.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    }
+  },
+
+  // Convertir archivo a base64
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  },
+
+  // Agregar documento desde subida
+  agregarDocumentoDesdeSubida(nombreArchivo, rutaDestino) {
+    const tableBody = document.getElementById("documentosTableBody");
+    const newIndex = tableBody.children.length;
+
+    const newRow = document.createElement("tr");
+    newRow.dataset.index = newIndex;
+    newRow.classList.add("fila-documento-mod", "bg-light");
+
+    newRow.innerHTML = `
+      <td>
+        <input type="text" class="form-control form-control-sm input-nombre" 
+               value="${nombreArchivo}" placeholder="Nombre del documento" required>
+      </td>
+      <td>
+        <input type="text" class="form-control form-control-sm input-archivo" 
+               value="${rutaDestino}" placeholder="archivo.ext o subcarpeta/archivo.ext" required>
+        <small class="form-text text-muted">Ruta relativa desde docs/</small>
+      </td>
+      <td class="text-center">
+        <span class="badge bg-secondary">${this.obtenerTipoArchivo(rutaDestino).toUpperCase()}</span>
+      </td>
+      <td class="text-end">
+        <button type="button" class="btn btn-sm btn-danger btn-eliminar-documento" 
+                data-index="${newIndex}" title="Eliminar documento">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+
+    tableBody.appendChild(newRow);
+    
+    // Actualizar tipo cuando se escribe en el campo archivo
+    const archivoInput = newRow.querySelector('.input-archivo');
+    archivoInput.addEventListener('input', (e) => {
+      const tipo = this.obtenerTipoArchivo(e.target.value);
+      newRow.querySelector('.badge').textContent = tipo.toUpperCase();
+      newRow.querySelector('.badge').className = `badge bg-${tipo === 'imagen' ? 'success' : 'secondary'}`;
+    });
+
+    newRow.querySelector(".btn-eliminar-documento").addEventListener("click", (e) => {
+      this.eliminarDocumento(newRow);
+    });
   },
 
   // Agregar nuevo documento
@@ -220,7 +381,7 @@ const documentos = {
 
     const nuevoDocumento = {
       nombre: "",
-      archivo: "docs/",
+      archivo: "",
     };
 
     newRow.innerHTML = `
@@ -230,7 +391,8 @@ const documentos = {
       </td>
       <td>
         <input type="text" class="form-control form-control-sm input-archivo" 
-               value="${nuevoDocumento.archivo}" placeholder="docs/archivo.ext" required>
+               value="${nuevoDocumento.archivo}" placeholder="archivo.ext o subcarpeta/archivo.ext" required>
+        <small class="form-text text-muted">Ruta relativa desde docs/</small>
       </td>
       <td class="text-center">
         <span class="badge bg-secondary">-</span>
@@ -298,7 +460,7 @@ const documentos = {
         if (nombre && archivo) {
           nuevosDocumentos.push({
             nombre: nombre,
-            archivo: archivo
+            archivo: archivo // Solo guardamos la ruta relativa desde docs/
           });
         }
       }
@@ -314,7 +476,7 @@ const documentos = {
     this.renderizarDocumentos(this.documentosList);
   },
 
-    // Manejar guardado de documentos
+  // Manejar guardado de documentos
   async manejarGuardadoDocumentos() {
     const feedback = document.getElementById("feedbackDocumentos");
 
@@ -331,7 +493,7 @@ const documentos = {
         throw new Error("Debe haber al menos un documento.");
       }
 
-      // ✅ IMPLEMENTACIÓN COMPLETA: Guardar en GitHub
+      // Guardar en GitHub
       await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
@@ -370,131 +532,24 @@ const documentos = {
     }
   },
 
-  // ✅ IMPLEMENTACIÓN COMPLETA: Guardar en GitHub
+  // Guardar en GitHub
   async guardarEnGitHub(documentos, githubToken) {
     try {
-      console.log("Iniciando guardado de documentos en GitHub...");
-
-      const tokenLimpio = githubToken.trim();
-      
-      // Verificar formato del token
-      if (!tokenLimpio.startsWith('github_pat_')) {
-        throw new Error('Formato de token incorrecto. Debe ser un Fine-Grained Token que empiece con "github_pat_"');
-      }
-
-      // 1. Preparar los datos para guardar
-      const datosParaGuardar = {
-        documentos: documentos,
-        ultimaActualizacion: new Date().toISOString(),
-        totalDocumentos: documentos.length
-      };
-
-      // 2. Convertir a JSON y luego a Base64 (requerido por GitHub API)
-      const contenidoJSON = JSON.stringify(datosParaGuardar, null, 2);
+      // Convertir documentos a JSON y luego a base64
+      const contenidoJSON = JSON.stringify(documentos, null, 2);
       const contenidoBase64 = btoa(unescape(encodeURIComponent(contenidoJSON)));
 
-      // 3. Configurar la ruta del archivo en GitHub
-      const filePath = "json/documentos.json"; // Archivo donde se guardarán los documentos
-
-      let sha = null;
-
-      // 4. Intentar obtener el SHA del archivo existente (para actualizar)
-      try {
-        const getResponse = await fetch(
-          `${CONFIG.GITHUB.API_BASE}/contents/${filePath}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${tokenLimpio}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'X-GitHub-Api-Version': '2022-11-28'
-            }
-          }
-        );
-
-        if (getResponse.ok) {
-          const fileData = await getResponse.json();
-          sha = fileData.sha;
-          console.log("✓ Archivo existente encontrado, actualizando...");
-        }
-      } catch (error) {
-        console.log("Archivo no existe, se creará nuevo...");
-      }
-
-      // 5. Preparar datos para la API de GitHub
-      const datosActualizacion = {
-        message: `Actualizar lista de documentos - ${documentos.length} documentos`,
-        content: contenidoBase64,
-        sha: sha,
-        branch: CONFIG.GITHUB.BRANCH
-      };
-
-      // 6. Guardar/Actualizar el archivo en GitHub
-      const updateResponse = await fetch(
-        `${CONFIG.GITHUB.API_BASE}/contents/${filePath}`,
-        {
-          method: "PUT",
-          headers: {
-            'Authorization': `Bearer ${tokenLimpio}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          },
-          body: JSON.stringify(datosActualizacion)
-        }
+      // Guardar en el archivo de documentos
+      await github.guardarArchivo(
+        "json/documentos.json",
+        contenidoBase64,
+        githubToken,
+        "Actualizar lista de documentos"
       );
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        throw new Error(`Error al actualizar GitHub: ${updateResponse.status} - ${errorData.message}`);
-      }
-
-      const result = await updateResponse.json();
-      console.log("✓ Documentos guardados exitosamente en GitHub:", result);
-      
-      return result;
 
     } catch (error) {
       console.error("Error en guardarEnGitHub:", error);
-      
-      // Mensajes de error específicos
-      if (error.message.includes('401')) {
-        throw new Error('Token inválido o expirado. Verifique las credenciales.');
-      } else if (error.message.includes('403')) {
-        throw new Error('Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".');
-      } else if (error.message.includes('404')) {
-        throw new Error('Repositorio no encontrado. Verifique que el repositorio exista.');
-      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
-        throw new Error('Error de conexión. Verifique su conexión a internet.');
-      } else {
-        throw new Error(`Error al guardar en GitHub: ${error.message}`);
-      }
-    }
-  },
-
-  // ✅ NUEVA FUNCIÓN: Cargar documentos desde GitHub
-  async cargarDocumentosDesdeGitHub() {
-    try {
-      console.log("Cargando documentos desde GitHub...");
-
-      // Intentar cargar desde el archivo en GitHub
-      const response = await fetch('json/documentos.json');
-      
-      if (response.ok) {
-        const datos = await response.json();
-        
-        if (datos && Array.isArray(datos.documentos)) {
-          console.log("✓ Documentos cargados desde GitHub:", datos.documentos.length);
-          return datos.documentos;
-        }
-      }
-      
-      // Si no existe o hay error, usar documentos por defecto
-      console.log("Usando documentos por defecto");
-      return this.getDocumentosPorDefecto();
-      
-    } catch (error) {
-      console.error("Error cargando documentos desde GitHub:", error);
-      return this.getDocumentosPorDefecto();
+      throw error;
     }
   },
 
@@ -505,7 +560,7 @@ const documentos = {
     });
   },
 
-    // Inicializar eventos de documentos (para modo lectura)
+  // Inicializar eventos de documentos (para modo lectura)
   inicializarEventosDocumentos() {
     if (this.container) {
       this.container.querySelectorAll(".doc-item").forEach((item) => {
@@ -514,43 +569,31 @@ const documentos = {
     }
   },
 
-    // ✅ FUNCIÓN AUXILIAR: Documentos por defecto
-  getDocumentosPorDefecto() {
-    return [
-      { nombre: "Mi Conexión Bancaribe - Personas", archivo: "docs/Mi Conexión Bancaribe - Personas .pdf" },
-      { nombre: "SENIAT", archivo: "docs/SENIAT.jpeg" },
-      { nombre: "RIF PDF", archivo: "docs/rif.pdf" },
-      { nombre: "RIF PNG", archivo: "docs/rif.png" },
-      { nombre: "Tarjeta Bancaribe Frente", archivo: "docs/tarjeta bancaribe frente.jpeg" },
-      { nombre: "Tarjeta Bancaribe Dorso", archivo: "docs/tarjeta bancaribe dorso.jpeg" },
-      { nombre: "Index HTML", archivo: "docs/index.html" }
+  // Cargar documentos iniciales
+  cargarDocumentosIniciales() {
+    // Documentos por defecto - ahora con rutas relativas desde docs/
+    const documentosIniciales = [
+      { nombre: "Mi Conexión Bancaribe - Personas", archivo: "Mi Conexión Bancaribe - Personas .pdf" },
+      { nombre: "SENIAT", archivo: "SENIAT.jpeg" },
+      { nombre: "RIF PDF", archivo: "rif.pdf" },
+      { nombre: "RIF PNG", archivo: "rif.png" },
+      { nombre: "Tarjeta Bancaribe Frente", archivo: "tarjeta bancaribe frente.jpeg" },
+      { nombre: "Tarjeta Bancaribe Dorso", archivo: "tarjeta bancaribe dorso.jpeg" },
+      { nombre: "Index HTML", archivo: "index.html" }
     ];
+
+    this.renderizarDocumentos(documentosIniciales);
   },
 
-  // ✅ ACTUALIZAR: Cargar documentos iniciales
-  async cargarDocumentosIniciales() {
-    try {
-      const documentos = await this.cargarDocumentosDesdeGitHub();
-      this.renderizarDocumentos(documentos);
-    } catch (error) {
-      console.error("Error cargando documentos:", error);
-      // En caso de error, usar documentos por defecto
-      const documentosPorDefecto = this.getDocumentosPorDefecto();
-      this.renderizarDocumentos(documentosPorDefecto);
-    }
-  },
-
-    // Inicializar pestaña de documentos
-  async inicializar() {
-    // Establecer el contenedor
+  // Inicializar pestaña de documentos
+  inicializar() {
     this.container = document.getElementById("docsContent");
     if (!this.container) {
       console.error("No se encontró el contenedor docsContent");
       return;
     }
     
-    // Cargar documentos (ahora es async)
-    await this.cargarDocumentosIniciales();
-    console.log('Pestaña "Documentos" inicializada con gestión CRUD y GitHub');
+    this.cargarDocumentosIniciales();
+    console.log('Pestaña "Documentos" inicializada con gestión CRUD y subida de archivos');
   },
 };
