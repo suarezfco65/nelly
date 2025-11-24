@@ -15,9 +15,6 @@ function verificarAcceso() {
 
 // Elementos DOM globales
 const elements = {
-  unmaskBtn: document.getElementById("unmaskBtn"),
-  masterKey: document.getElementById("masterKey"),
-  feedback: document.getElementById("feedback"),
   datosContent: document.getElementById("datosContent"),
   // AÑADIDO: Contenedor para la nueva pestaña
   accesosContent: document.getElementById("accesosContent"),
