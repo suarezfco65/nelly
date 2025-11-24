@@ -1,0 +1,30 @@
+{
+  "documentos": [
+    {
+      "nombre": "Mi Conexión Bancaribe - Personas",
+      "archivo": "docs/Mi Conexión Bancaribe - Personas .pdf"
+    },
+    {
+      "nombre": "SENIAT",
+      "archivo": "docs/SENIAT.jpeg"
+    },
+    {
+      "nombre": "RIF PDF", 
+      "archivo": "docs/rif.pdf"
+    },
+    {
+      "nombre": "RIF PNG",
+      "archivo": "docs/rif.png"
+    },
+    {
+      "nombre": "Tarjeta Bancaribe Frente",
+      "archivo": "docs/tarjeta bancaribe frente.jpeg"
+    },
+    {
+      "nombre": "Tarjeta Bancaribe Dorso",
+      "archivo": "docs/tarjeta bancaribe dorso.jpeg"
+    }
+  ],
+  "ultimaActualizacion": "2024-01-01T00:00:00.000Z",
+  "totalDocumentos": 7
+}
