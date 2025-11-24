@@ -314,7 +314,7 @@ const documentos = {
     this.renderizarDocumentos(this.documentosList);
   },
 
-  // Manejar guardado de documentos
+    // Manejar guardado de documentos
   async manejarGuardadoDocumentos() {
     const feedback = document.getElementById("feedbackDocumentos");
 
@@ -331,7 +331,7 @@ const documentos = {
         throw new Error("Debe haber al menos un documento.");
       }
 
-      // Guardar en GitHub
+      // ✅ IMPLEMENTACIÓN COMPLETA: Guardar en GitHub
       await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
@@ -370,22 +370,131 @@ const documentos = {
     }
   },
 
-  // Guardar en GitHub
+  // ✅ IMPLEMENTACIÓN COMPLETA: Guardar en GitHub
   async guardarEnGitHub(documentos, githubToken) {
     try {
-      // Aquí implementarías la lógica para guardar en GitHub
-      // Por ahora, solo mostraremos un mensaje
-      console.log("Guardando documentos:", documentos);
+      console.log("Iniciando guardado de documentos en GitHub...");
+
+      const tokenLimpio = githubToken.trim();
       
-      // Simulación de guardado
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Verificar formato del token
+      if (!tokenLimpio.startsWith('github_pat_')) {
+        throw new Error('Formato de token incorrecto. Debe ser un Fine-Grained Token que empiece con "github_pat_"');
+      }
+
+      // 1. Preparar los datos para guardar
+      const datosParaGuardar = {
+        documentos: documentos,
+        ultimaActualizacion: new Date().toISOString(),
+        totalDocumentos: documentos.length
+      };
+
+      // 2. Convertir a JSON y luego a Base64 (requerido por GitHub API)
+      const contenidoJSON = JSON.stringify(datosParaGuardar, null, 2);
+      const contenidoBase64 = btoa(unescape(encodeURIComponent(contenidoJSON)));
+
+      // 3. Configurar la ruta del archivo en GitHub
+      const filePath = "json/documentos.json"; // Archivo donde se guardarán los documentos
+
+      let sha = null;
+
+      // 4. Intentar obtener el SHA del archivo existente (para actualizar)
+      try {
+        const getResponse = await fetch(
+          `${CONFIG.GITHUB.API_BASE}/contents/${filePath}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${tokenLimpio}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          }
+        );
+
+        if (getResponse.ok) {
+          const fileData = await getResponse.json();
+          sha = fileData.sha;
+          console.log("✓ Archivo existente encontrado, actualizando...");
+        }
+      } catch (error) {
+        console.log("Archivo no existe, se creará nuevo...");
+      }
+
+      // 5. Preparar datos para la API de GitHub
+      const datosActualizacion = {
+        message: `Actualizar lista de documentos - ${documentos.length} documentos`,
+        content: contenidoBase64,
+        sha: sha,
+        branch: CONFIG.GITHUB.BRANCH
+      };
+
+      // 6. Guardar/Actualizar el archivo en GitHub
+      const updateResponse = await fetch(
+        `${CONFIG.GITHUB.API_BASE}/contents/${filePath}`,
+        {
+          method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${tokenLimpio}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          },
+          body: JSON.stringify(datosActualizacion)
+        }
+      );
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(`Error al actualizar GitHub: ${updateResponse.status} - ${errorData.message}`);
+      }
+
+      const result = await updateResponse.json();
+      console.log("✓ Documentos guardados exitosamente en GitHub:", result);
       
-      // En una implementación real, aquí guardarías en un archivo JSON en GitHub
-      alert("Funcionalidad de guardado en GitHub pendiente de implementar");
+      return result;
 
     } catch (error) {
       console.error("Error en guardarEnGitHub:", error);
-      throw error;
+      
+      // Mensajes de error específicos
+      if (error.message.includes('401')) {
+        throw new Error('Token inválido o expirado. Verifique las credenciales.');
+      } else if (error.message.includes('403')) {
+        throw new Error('Token sin permisos suficientes. Verifique que tenga permisos de "Contents: Read and write".');
+      } else if (error.message.includes('404')) {
+        throw new Error('Repositorio no encontrado. Verifique que el repositorio exista.');
+      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        throw new Error('Error de conexión. Verifique su conexión a internet.');
+      } else {
+        throw new Error(`Error al guardar en GitHub: ${error.message}`);
+      }
+    }
+  },
+
+  // ✅ NUEVA FUNCIÓN: Cargar documentos desde GitHub
+  async cargarDocumentosDesdeGitHub() {
+    try {
+      console.log("Cargando documentos desde GitHub...");
+
+      // Intentar cargar desde el archivo en GitHub
+      const response = await fetch('json/documentos.json');
+      
+      if (response.ok) {
+        const datos = await response.json();
+        
+        if (datos && Array.isArray(datos.documentos)) {
+          console.log("✓ Documentos cargados desde GitHub:", datos.documentos.length);
+          return datos.documentos;
+        }
+      }
+      
+      // Si no existe o hay error, usar documentos por defecto
+      console.log("Usando documentos por defecto");
+      return this.getDocumentosPorDefecto();
+      
+    } catch (error) {
+      console.error("Error cargando documentos desde GitHub:", error);
+      return this.getDocumentosPorDefecto();
     }
   },
 
@@ -405,10 +514,9 @@ const documentos = {
     }
   },
 
-  // Cargar documentos iniciales
-  cargarDocumentosIniciales() {
-    // Documentos por defecto
-    const documentosIniciales = [
+    // ✅ FUNCIÓN AUXILIAR: Documentos por defecto
+  getDocumentosPorDefecto() {
+    return [
       { nombre: "Mi Conexión Bancaribe - Personas", archivo: "docs/Mi Conexión Bancaribe - Personas .pdf" },
       { nombre: "SENIAT", archivo: "docs/SENIAT.jpeg" },
       { nombre: "RIF PDF", archivo: "docs/rif.pdf" },
@@ -417,20 +525,32 @@ const documentos = {
       { nombre: "Tarjeta Bancaribe Dorso", archivo: "docs/tarjeta bancaribe dorso.jpeg" },
       { nombre: "Index HTML", archivo: "docs/index.html" }
     ];
-
-    this.renderizarDocumentos(documentosIniciales);
   },
 
-  // Inicializar pestaña de documentos
-    inicializar() {
-    // ✅ CORREGIR: Establecer el contenedor primero
+  // ✅ ACTUALIZAR: Cargar documentos iniciales
+  async cargarDocumentosIniciales() {
+    try {
+      const documentos = await this.cargarDocumentosDesdeGitHub();
+      this.renderizarDocumentos(documentos);
+    } catch (error) {
+      console.error("Error cargando documentos:", error);
+      // En caso de error, usar documentos por defecto
+      const documentosPorDefecto = this.getDocumentosPorDefecto();
+      this.renderizarDocumentos(documentosPorDefecto);
+    }
+  },
+
+    // Inicializar pestaña de documentos
+  async inicializar() {
+    // Establecer el contenedor
     this.container = document.getElementById("docsContent");
     if (!this.container) {
       console.error("No se encontró el contenedor docsContent");
       return;
     }
     
-    this.cargarDocumentosIniciales();
-    console.log('Pestaña "Documentos" inicializada con gestión CRUD');
+    // Cargar documentos (ahora es async)
+    await this.cargarDocumentosIniciales();
+    console.log('Pestaña "Documentos" inicializada con gestión CRUD y GitHub');
   },
 };
