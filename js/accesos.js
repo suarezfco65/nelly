@@ -13,16 +13,14 @@ const accesos = {
     this.renderizarAccesos(this.datosAccesos);
   },
   // accesos.js - Agregar esta nueva función
-  mostrarModalDetalles(acceso) {
-    const modalHTML = `
+mostrarModalDetalles(acceso) {
+  const modalHTML = `
     <div class="modal fade" id="detallesAccesoModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header bg-primary text-white">
             <h5 class="modal-title">
-              <i class="bi bi-info-circle"></i> Detalles de Acceso - ${
-                acceso.sistema
-              }
+              <i class="bi bi-info-circle"></i> Detalles de Acceso - ${acceso.sistema}
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
@@ -37,9 +35,7 @@ const accesos = {
                   </tr>
                   <tr>
                     <td><strong>URL:</strong></td>
-                    <td><a href="${acceso.url}" target="_blank">${
-      acceso.url
-    } <i class="bi bi-box-arrow-up-right small"></i></a></td>
+                    <td><a href="${acceso.url}" target="_blank">${acceso.url} <i class="bi bi-box-arrow-up-right small"></i></a></td>
                   </tr>
                   <tr>
                     <td><strong>Usuario:</strong></td>
@@ -49,12 +45,8 @@ const accesos = {
               </div>
               <div class="col-md-6">
                 <h6 class="text-muted">Observaciones</h6>
-                <div class="border rounded p-3 bg-light">
-                  ${
-                    acceso.observaciones
-                      ? `<p class="mb-0">${acceso.observaciones}</p>`
-                      : '<p class="text-muted mb-0"><em>Sin observaciones</em></p>'
-                  }
+                <div class="border rounded p-3 bg-light" style="min-height: 120px; white-space: pre-line;">
+                  ${acceso.observaciones || '<span class="text-muted"><em>Sin observaciones</em></span>'}
                 </div>
               </div>
             </div>
@@ -71,7 +63,6 @@ const accesos = {
       </div>
     </div>
   `;
-
     // Remover modal anterior si existe
     const modalExistente = document.getElementById("detallesAccesoModal");
     if (modalExistente) {
