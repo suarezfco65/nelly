@@ -1,14 +1,13 @@
-// Configuración global
-const CONFIG = {
-  KEY: "Ncq123",
-  JSON_URL: "json/datos-basicos.json",
-};
+// app.js
+
+// Configuración global (ELIMINADA, AHORA EN global-config.js)
 
 // Al inicio de app.js, verificar acceso
 function verificarAcceso() {
   const claveAcceso = sessionStorage.getItem("claveAcceso");
   if (!claveAcceso) {
-    window.location.href = "login.html";
+    // Usa CONFIG.LOGIN_URL del objeto global
+    window.location.href = CONFIG.LOGIN_URL;
     return false;
   }
   return true;
@@ -82,7 +81,6 @@ if (document.readyState === "loading") {
 }
 
 // Exportar para uso en otros archivos (si es necesario)
-window.CONFIG = CONFIG;
 window.elements = elements;
 window.state = state;
 window.docModalInstance = docModalInstance;
