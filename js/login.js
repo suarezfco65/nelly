@@ -162,7 +162,7 @@ async function procesarLogin(clave) {
 
       setTimeout(() => {
         window.location.href = "index.html";
-      }, 1500);
+      }, 1500Nue
     } else {
       // NO ES PRIMERA VEZ
       // Usa la ruta centralizada
@@ -251,26 +251,22 @@ async function cambiarClaveYMigrar(claveActual, claveNueva, tokenGitHub) {
       var datos = await seguridad.desencriptar(datosEncriptados, claveActual);
     }
 
-    // 3. Encriptar con la nueva clave
-    const datosEncriptadosNuevos = await seguridad.encriptar(datos, claveNueva);
+// 3. Encriptar con la nueva clave
+const datosEncriptadosNuevosStr = await seguridad.encriptar(datos, claveNueva);
 
-    mostrarFeedback(
-      feedbackCambiarClave,
-      "Clave verificada y datos re-encriptados. Guardando en GitHub...",
-      "info",
-      true
-    );
+// CORRECCIÓN AÑADIDA: Base64 para la API de GitHub
+const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosNuevosStr); // <-- ¡Añadir!
 
-    // 4. Guardar en GitHub (USANDO github.js)
-    // Usa la ruta centralizada
-    const commitMessage = `Cambio de clave y migración de datos básicos por ${datos.nombre}`;
-    await github.guardarArchivo(
-      CONFIG.DATOS_ENCRIPTADOS_PATH,
-      datosEncriptadosNuevos,
-      tokenGitHub,
-      commitMessage
-    );
-
+// 4. Guardar en GitHub (USANDO github.js)
+// Usa la ruta centralizada
+const commitMessage = `Cambio de clave y migración de datos básicos por ${datos.nombre}`;
+await github.guardarArchivo(
+  CONFIG.DATOS_ENCRIPTADOS_PATH,
+  datosEncriptadosBase64ForAPI, // <-- Usar la nueva variable
+  tokenGitHub,
+  commitMessage
+);
+    
     // 5. Finalizar
     sessionStorage.setItem("claveAcceso", claveNueva);
     btn.disabled = false;
