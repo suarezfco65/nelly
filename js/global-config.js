@@ -3,8 +3,8 @@ const CONFIG = {
   JSON_URL: "json/datos-basicos.json",
   LOGIN_URL: "login.html",
   DATOS_ENCRYPTED_PATH: "json/datos-basicos-encriptado.json",
-  TRANSACCIONES_PATH: "json/transacciones.json", // Ruta para el módulo transacciones.js
-  DOCUMENTOS_PATH: "json/documentos.json",
+  TRANSACCIONES_PATH: "json/transacciones.json",
+  DOCUMENTOS_PATH: "json/documentos.json", // NUEVA: Ruta para documentos
 
   // Configuración centralizada de GitHub
   GITHUB: {
