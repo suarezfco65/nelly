@@ -1,6 +1,7 @@
 // login.js
 
 // NOTA: CONFIG y github ya son objetos globales cargados por otros scripts (global-config.js y github.js)
+// Se asume que seguridad.js ya está cargado.
 
 // Elementos DOM
 let loginForm, formCambiarClave, toggleCambiarClave;
@@ -45,8 +46,7 @@ function inicializarTogglesPassword() {
   document.querySelectorAll(".password-toggle").forEach((toggle) => {
     toggle.addEventListener("click", function () {
       const input = this.closest(".input-group").querySelector("input");
-      const type =
-        input.getAttribute("type") === "password" ? "text" : "password";
+      const type = input.getAttribute("type") === "password" ? "text" : "password";
       input.setAttribute("type", type);
       this.innerHTML =
         type === "password"
@@ -64,18 +64,18 @@ function toggleSeccionCambiarClave(e) {
   e.target.textContent = isExpanded
     ? "Ocultar Cambio/Migración de Clave"
     : "Cambiar Clave y Migrar Datos";
-
+  
   // Limpiar feedback cuando se oculta
   if (!isExpanded) {
-    feedbackCambiarClave.innerHTML = "";
-    formCambiarClave.reset();
+     feedbackCambiarClave.innerHTML = '';
+     formCambiarClave.reset();
   }
 }
 
 // Verificar si es primera vez (archivo encriptado no existe)
 async function verificarPrimeraVez() {
   try {
-    // Usa la ruta centralizada
+    // Usa la ruta centralizada de CONFIG (asumido global)
     const response = await fetch(CONFIG.DATOS_ENCRIPTADOS_PATH);
     if (!response.ok) {
       // Archivo no existe o hay un error (ej. 404)
@@ -104,9 +104,7 @@ function manejarCambioClave(e) {
   e.preventDefault();
   const claveActual = document.getElementById("claveActual").value;
   const claveNueva = document.getElementById("claveNueva").value;
-  const claveNuevaConfirmar = document.getElementById(
-    "claveNuevaConfirmar"
-  ).value;
+  const claveNuevaConfirmar = document.getElementById("claveNuevaConfirmar").value;
   const tokenGitHub = document.getElementById("tokenGitHub").value;
 
   if (claveNueva !== claveNuevaConfirmar) {
@@ -117,9 +115,9 @@ function manejarCambioClave(e) {
     );
     return;
   }
-
+  
   if (claveActual === claveNueva) {
-    mostrarFeedback(
+     mostrarFeedback(
       feedbackCambiarClave,
       "La clave nueva debe ser diferente de la clave actual.",
       "danger"
@@ -127,11 +125,7 @@ function manejarCambioClave(e) {
     return;
   }
 
-  cambiarClaveYMigrar(
-    claveActual.trim(),
-    claveNueva.trim(),
-    tokenGitHub.trim()
-  );
+  cambiarClaveYMigrar(claveActual.trim(), claveNueva.trim(), tokenGitHub.trim());
 }
 
 // Función para procesar login
@@ -150,9 +144,9 @@ async function procesarLogin(clave) {
 
     if (!archivoEncriptadoExiste) {
       // PRIMERA VEZ (No hay archivo encriptado, se acepta cualquier clave)
-
+      
       // La clave ingresada por el usuario será la clave inicial.
-
+      
       mostrarFeedback(
         loginFeedback,
         "Sistema inicializado con la clave proporcionada. Redirigiendo...",
@@ -162,7 +156,8 @@ async function procesarLogin(clave) {
 
       setTimeout(() => {
         window.location.href = "index.html";
-      }, 1500Nue
+      }, 1500);
+      
     } else {
       // NO ES PRIMERA VEZ
       // Usa la ruta centralizada
@@ -173,6 +168,7 @@ async function procesarLogin(clave) {
 
       const datosEncriptados = await response.text();
       // Si la desencriptación falla, lanzará una excepción
+      // seguridad.js es un módulo global asumido
       await seguridad.desencriptar(datosEncriptados, clave);
 
       mostrarFeedback(
@@ -232,41 +228,46 @@ async function cambiarClaveYMigrar(claveActual, claveNueva, tokenGitHub) {
       // Usa la ruta centralizada
       const initialResponse = await fetch(CONFIG.JSON_URL);
       if (!initialResponse.ok) {
-        throw new Error(
-          "No se pudo cargar el archivo inicial de datos básicos."
-        );
+        throw new Error("No se pudo cargar el archivo inicial de datos básicos.");
       }
       // No hay clave actual que verificar, solo cargamos los datos.
       var datos = await initialResponse.json();
-
+      
       if (!claveActual) {
-        // Esto solo ocurre si un usuario intenta migrar un archivo inicial sin proporcionar clave.
-        throw new Error(
-          "Clave actual no proporcionada. Se asume que el archivo inicial (datos-basicos.json) no está encriptado y se procederá a encriptarlo con la clave nueva. La clave actual es requerida solo si existe un archivo encriptado."
-        );
+          // Esto solo ocurre si un usuario intenta migrar un archivo inicial sin proporcionar clave.
+          throw new Error("Clave actual no proporcionada. Se asume que el archivo inicial (datos-basicos.json) no está encriptado y se procederá a encriptarlo con la clave nueva. La clave actual es requerida solo si existe un archivo encriptado.");
       }
+      
     } else {
       // Archivo encriptado existe, verificamos la clave actual
       const datosEncriptados = await response.text();
       var datos = await seguridad.desencriptar(datosEncriptados, claveActual);
     }
 
-// 3. Encriptar con la nueva clave
-const datosEncriptadosNuevosStr = await seguridad.encriptar(datos, claveNueva);
+    // 3. Encriptar con la nueva clave
+    const datosEncriptadosNuevosStr = await seguridad.encriptar(datos, claveNueva);
 
-// CORRECCIÓN AÑADIDA: Base64 para la API de GitHub
-const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosNuevosStr); // <-- ¡Añadir!
+    // CORRECCIÓN CLAVE: Codificar en Base64 el resultado de la encriptación
+    // para cumplir con los requisitos de la API de GitHub (doble codificación).
+    const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosNuevosStr); 
 
-// 4. Guardar en GitHub (USANDO github.js)
-// Usa la ruta centralizada
-const commitMessage = `Cambio de clave y migración de datos básicos por ${datos.nombre}`;
-await github.guardarArchivo(
-  CONFIG.DATOS_ENCRIPTADOS_PATH,
-  datosEncriptadosBase64ForAPI, // <-- Usar la nueva variable
-  tokenGitHub,
-  commitMessage
-);
-    
+    mostrarFeedback(
+      feedbackCambiarClave,
+      "Clave verificada y datos re-encriptados. Guardando en GitHub...",
+      "info",
+      true
+    );
+
+    // 4. Guardar en GitHub (USANDO github.js)
+    // Usa la ruta centralizada
+    const commitMessage = `Cambio de clave y migración de datos básicos por ${datos.nombre}`;
+    await github.guardarArchivo(
+      CONFIG.DATOS_ENCRIPTADOS_PATH,
+      datosEncriptadosBase64ForAPI, // <-- Usar la cadena con Base64 doble
+      tokenGitHub,
+      commitMessage
+    );
+
     // 5. Finalizar
     sessionStorage.setItem("claveAcceso", claveNueva);
     btn.disabled = false;
@@ -277,8 +278,9 @@ await github.guardarArchivo(
     );
 
     setTimeout(() => {
-      window.location.href = "index.html";
+        window.location.href = "index.html";
     }, 2000);
+
   } catch (error) {
     console.error("Error cambiando clave:", error);
     btn.disabled = false;
@@ -291,10 +293,7 @@ await github.guardarArchivo(
         "La clave actual proporcionada es incorrecta o no coincide con los datos.",
         "danger"
       );
-    } else if (
-      error.message.includes("Token inválido") ||
-      error.message.includes("permisos")
-    ) {
+    } else if (error.message.includes("Token inválido") || error.message.includes("permisos")) {
       // Los errores detallados vienen de github.js
       mostrarFeedback(feedbackCambiarClave, error.message, "danger");
     } else if (error.message.includes("GitHub")) {
