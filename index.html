@@ -238,83 +238,17 @@
                   </div>
                 </div>
 
-                <div
-                  class="tab-pane fade"
-                  id="docs"
-                  role="tabpanel"
-                  aria-labelledby="docs-tab"
-                >
-                  <p class="mb-2">
-                    Lista de documentos almacenados en la carpeta
-                    <code>docs/</code>. Haga clic en cualquiera para
-                    visualizarlo en un modal.
-                  </p>
-
-                  <ul class="list-group" id="documentsList">
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/Mi Conexión Bancaribe - Personas .pdf"
-                      role="button"
-                    >
-                      Mi Conexión Bancaribe - Personas .pdf
-                      <span class="badge bg-secondary">PDF</span>
-                    </li>
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/SENIAT.jpeg"
-                      role="button"
-                    >
-                      SENIAT.jpeg
-                      <span class="badge bg-secondary">IMG</span>
-                    </li>
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/rif.pdf"
-                      role="button"
-                    >
-                      rif.pdf
-                      <span class="badge bg-secondary">PDF</span>
-                    </li>
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/rif.png"
-                      role="button"
-                    >
-                      rif.png
-                      <span class="badge bg-secondary">IMG</span>
-                    </li>
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/tarjeta bancaribe frente.jpeg"
-                      role="button"
-                    >
-                      tarjeta bancaribe frente.jpeg
-                      <span class="badge bg-secondary">IMG</span>
-                    </li>
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/tarjeta bancaribe dorso.jpeg"
-                      role="button"
-                    >
-                      tarjeta bancaribe dorso.jpeg
-                      <span class="badge bg-secondary">IMG</span>
-                    </li>
-                    <li
-                      class="list-group-item d-flex justify-content-between align-items-center doc-item"
-                      data-file="docs/index.html"
-                      role="button"
-                    >
-                      docs/index.html
-                      <span class="badge bg-secondary">HTML</span>
-                    </li>
-                  </ul>
-
-                  <div class="mt-3 text-muted small">
-                    Nota: los nombres contienen espacios y caracteres
-                    especiales; el visor usa encodeURI al cargar el archivo para
-                    evitar errores.
-                  </div>
-                </div>
+                <!-- En index.html, reemplazar toda la sección de documentos -->
+<div class="tab-pane fade" id="docs" role="tabpanel" aria-labelledby="docs-tab">
+  <div id="docsContent">
+    <div class="text-center p-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando documentos...</p>
+    </div>
+  </div>
+</div>
 
                 <div
                   class="tab-pane fade"
