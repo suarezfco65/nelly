@@ -311,8 +311,21 @@ const datosBasicos = {
                         </div>
                     </div>
                 </div>
-            </div>`;
-            
+            </div>
+            <div class="mt-4">
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Guardar Cambios
+              </button>
+              <button type="button" id="btnCancelarModificacionBasicos" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </button>
+            </div>
+          </form>
+          <div id="feedbackModificacionBasicos" class="mt-3"></div>
+        </div>
+      </div>
+    `;
+
     elements.datosContent.innerHTML = formularioHTML;
 
     // Inicializar eventos del formulario
