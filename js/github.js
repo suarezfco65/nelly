@@ -1,6 +1,51 @@
 const github = {
-  // La configuración se obtiene del objeto global CONFIG
+// Asumimos que el proxy está disponible en esta ruta (ajuste si es diferente)
+  PROXY_URL: '/api/proxy',  // La configuración se obtiene del objeto global CONFIG
+/**
+   * Envía una solicitud al endpoint del proxy.
+   * @param {string} githubToken - El token de GitHub.
+   * @param {string} action - La acción a ejecutar ('listDir', 'updateFile', etc.).
+   * @param {string} filePath - La ruta del archivo o directorio.
+   * @param {Object} data - Datos adicionales para el cuerpo (payload de GitHub).
+   * @returns {Promise<Object>} La respuesta del proxy.
+   */
+  async _fetchProxy(githubToken, action, filePath, data = {}) {
+    if (!githubToken) {
+      throw new Error("Token de GitHub no proporcionado para la acción.");
+    }
+    
+    // El proxy espera un POST con esta estructura
+    const bodyPayload = {
+        githubToken: githubToken.trim(),
+        action: action,
+        filePath: filePath,
+        data: {
+            branch: CONFIG.GITHUB.BRANCH,
+            ...data
+        }
+    };
 
+    const response = await fetch(this.PROXY_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bodyPayload),
+    });
+    
+    const result = await response.json();
+
+    if (!result.ok) {
+        // Manejo de errores basado en la respuesta estructurada del proxy
+        const status = result.status || '500';
+        const errorMessage = result.data?.message || result.error || 'Error desconocido en la llamada al proxy.';
+        throw new Error(`Error ${status} al ejecutar acción '${action}' en GitHub: ${errorMessage}`);
+    }
+
+    return result.data; // Devuelve solo los datos (JSON) de la respuesta de GitHub
+  },
+
+  
   /**
    * Verifica la validez y los permisos de un token de GitHub.
    * @param {string} githubToken - El token de GitHub.
@@ -107,7 +152,19 @@ const github = {
 
     return await updateResponse.json();
   },
-  
+
+  /**
+   * Elimina un archivo de GitHub (usando deleteFile en el proxy).
+   */
+  async eliminarArchivoDeGitHub(githubToken, filePath, commitMessage, sha) {
+    const payload = {
+      message: commitMessage,
+      sha: sha, // SHA es OBLIGATORIO para eliminar
+    };
+    
+    return await this._fetchProxy(githubToken, 'deleteFile', filePath, payload);
+  },
+
   /**
    * Elimina un archivo de GitHub
    * @param {string} filePath - La ruta completa del archivo (e.g., 'docs/archivo.pdf')
@@ -176,57 +233,34 @@ const github = {
     return await deleteResponse.json();
   },
 
-  /**
-   * Obtiene la lista de contenidos (archivos) de un directorio en GitHub.
-   * Requiere un token para acceder al repositorio.
-   * @param {string} githubToken - El token de GitHub con permisos de lectura.
-   * @param {string} dirPath - Ruta del directorio (generalmente 'docs').
-   * @returns {Promise<Array<Object>>} Una lista de objetos de contenido de GitHub (solo archivos).
+/**
+   * 🌟 NUEVA FUNCIÓN AJUSTADA: Obtiene la lista de contenidos (archivos) de un directorio.
    */
   async obtenerContenidoDeDirectorio(githubToken, dirPath = 'docs') {
-    const config = CONFIG.GITHUB;
-    const tokenLimpio = githubToken.trim();
-    const pathLimpio = dirPath.startsWith('/') ? dirPath.substring(1) : dirPath;
+    const contents = await this._fetchProxy(githubToken, 'listDir', dirPath);
+    
+    // Filtrar solo archivos y mapear para obtener el nombre, ruta completa y SHA
+    return contents
+      .filter(item => item.type === 'file')
+      .map(item => ({
+          nombre: item.name, 
+          archivo: item.path, 
+          sha: item.sha 
+      }));
+  },  
 
-    const url = `${config.API_BASE}/contents/${pathLimpio}?ref=${config.BRANCH}`;
-
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${tokenLimpio}`,
-          Accept: "application/vnd.github.v3+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-             return [];
-        }
-        const errorData = await response.json();
-        throw new Error(
-          `Error al obtener contenido de GitHub (${dirPath}): ${response.status} - ${errorData.message}`
-        );
-      }
-
-      const contents = await response.json();
-      
-      // Filtrar solo archivos y mapear para obtener el nombre, ruta completa y SHA
-      return contents
-        .filter(item => item.type === 'file')
-        .map(item => ({
-            nombre: item.name, 
-            archivo: item.path, // ej: 'docs/archivo.ext'
-            sha: item.sha // Necesario para la eliminación
-        }));
-
-    } catch (error) {
-      console.error(`Error en obtenerContenidoDeDirectorio para ${dirPath}:`, error);
-      throw error; 
-    }
+  /**
+   * Sube un archivo a GitHub (usando updateFile en el proxy).
+   */
+  async subirArchivoAGitHub(githubToken, filePath, fileContentBase64, commitMessage) {
+    // Nota: La API de GitHub usa 'content' como Base64 para subir
+    const payload = {
+      message: commitMessage,
+      content: fileContentBase64,
+    };
+    
+    return await this._fetchProxy(githubToken, 'updateFile', filePath, payload);
   },
-// ... (resto de funciones de github.js)
   
 };
 
