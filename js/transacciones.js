@@ -315,7 +315,9 @@ mostrarTransacciones(transacciones) {
   // Función para actualizar estado del botón
   actualizarEstadoBoton() {
     const boton = document.getElementById('mostrarFormTransaccion');
-    if (this.tokenActual) {
+    const tokenExiste = seguridad.gestionarTokens.tokenExiste();
+    
+    if (tokenExiste) {
       boton.innerHTML = '<i class="bi bi-plus-circle"></i> Agregar Transacción (Token ✓)';
       boton.className = 'btn btn-success';
     } else {
@@ -351,9 +353,15 @@ mostrarTransacciones(transacciones) {
   },
 
   // Función para solicitar token inicial
-  async solicitarTokenInicial() {    
+  async solicitarTokenInicial() {
+    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para agregar transacciones:');
+    if (!githubToken) {
+      return;
+    }
+    
+    const feedback = document.getElementById('transaccionesContent');
+    
     try {
-      await github.verificarToken(); // Esto pedirá el token si no existe
       // Mostrar mensaje de verificación
       const contenidoOriginal = feedback.innerHTML;
       feedback.innerHTML = `
@@ -366,11 +374,14 @@ mostrarTransacciones(transacciones) {
       `;
       
       // Verificar token
-      const tokenValido = await this.verificarToken(githubToken);
+      const tokenValido = await github.verificarToken(githubToken);
       if (!tokenValido) {
         throw new Error('Token inválido o sin permisos suficientes');
       }
-            
+      
+      // Guardar token usando el sistema centralizado
+      seguridad.gestionarTokens.guardarToken(githubToken);
+      
       // Restaurar contenido y mostrar formulario
       this.mostrarTransacciones((await fetch('json/transacciones.json').then(r => r.json())).transacciones);
       
@@ -431,8 +442,8 @@ mostrarTransacciones(transacciones) {
       return;
     }
     
-    // Verificar que tenemos token
-    if (!this.tokenActual) {
+    // Verificar que tenemos token usando el sistema centralizado
+    if (!seguridad.gestionarTokens.tokenExiste()) {
       feedback.innerHTML = '<div class="alert alert-danger">Token no disponible. Por favor, reinicie el proceso.</div>';
       return;
     }
@@ -454,8 +465,8 @@ mostrarTransacciones(transacciones) {
       const montoDolares = this.convertirBsADolares(monto, fecha);
       const infoTasa = this.obtenerInfoTasa(fecha);
       
-      // Usar la función de GitHub con el token actual
-      await this.guardarEnGitHub(nuevaTransaccion, this.tokenActual);
+      // Usar la función de GitHub con el token del sistema centralizado
+      await this.guardarEnGitHub(nuevaTransaccion);
       
       const mensajeTasa = infoTasa ? 
         `Tasa: ${this.formatoNumero.format(infoTasa.tasa)} Bs/$ (${infoTasa.fecha})` : 
