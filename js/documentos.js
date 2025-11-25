@@ -7,29 +7,29 @@ const documentos = {
   container: null,
   uploadModalInstance: null,
 
-  // Helper para 4. y 5. solicitar el token y verificar permisos (Contents: write)
-  async solicitarToken() {
+  /**
+   * Helper unificado para solicitar y validar el token para LECTURA o ESCRITURA.
+   * @param {string} promptMessage - Mensaje mostrado en el prompt al usuario.
+   * @param {string} requiredPermissions - Indicador de permisos ('read' o 'write').
+   * @returns {Promise<string>} El token validado.
+   */
+  async solicitarToken(promptMessage, requiredPermissions = 'read') {
+    // Si ya tenemos un token, lo devolvemos (asumiendo que es válido)
     if (this.tokenActual) {
-      try {
-        await github.verificarToken(this.tokenActual);
-        return this.tokenActual;
-      } catch (e) {
-        console.warn("El token guardado ya no es válido, solicitando uno nuevo.");
-        this.tokenActual = null;
-        sessionStorage.removeItem("githubToken");
-      }
+      return this.tokenActual;
     }
 
-    const token = prompt("Para realizar esta operación (Eliminar/Subir), por favor ingrese su token de acceso (GitHub PAT) con permisos 'Contents: Write':");
+    const token = prompt(promptMessage || "Por favor, ingrese su Token de Acceso Personal (GitHub PAT):");
     if (!token) throw new Error("Operación cancelada: Token no proporcionado.");
     
+    // Verificamos si el token es válido
     try {
-        await github.verificarToken(token);
+        await github.verificarToken(token); 
         this.tokenActual = token;
         sessionStorage.setItem("githubToken", token);
         return token;
     } catch (error) {
-        alert("Token inválido o sin permisos: " + error.message);
+        alert(`Token inválido o sin los permisos requeridos (${requiredPermissions}): ` + error.message);
         throw new Error("Token inválido.");
     }
   },
@@ -55,26 +55,26 @@ const documentos = {
     );
   },
 
-  // 3. Función para abrir documento en modal (se mantiene con ajustes de estructura)
+  // 3. Función para abrir documento en modal (se mantiene)
   abrirDocumento(elemento) {
     const archivo = elemento.getAttribute("data-file");
     const rutaCompleta = archivo.startsWith("docs/") ? archivo : `docs/${archivo}`;
     const tipoArchivo = this.obtenerTipoArchivo(archivo);
 
     elements.docModalTitle.textContent = elemento.textContent.trim();
-
+    
     // Limpiar manejador de errores anterior
     if (state.imageErrorHandler) {
       elements.docImage.removeEventListener("error", state.imageErrorHandler);
     }
 
-    // El footer del modal se usa en el index.html para una pequeña nota
     const footer = elements.docModal.querySelector(".modal-footer");
 
     if (tipoArchivo === "imagen") {
       elements.docIframe.style.display = "none";
       elements.docImage.style.display = "block";
-      // Las imágenes se cargan de la ruta absoluta del repositorio
+      
+      // Construir la URL raw para imágenes
       const githubUser = CONFIG.GITHUB.OWNER;
       const githubRepo = CONFIG.GITHUB.REPO;
       const rawUrl = `https://raw.githubusercontent.com/${githubUser}/${githubRepo}/${CONFIG.GITHUB.BRANCH}/${archivo}`;
@@ -88,29 +88,49 @@ const documentos = {
       if (footer) footer.style.display = 'none';
 
     } else {
-      // Para PDF, HTML, etc., usar iframe
       elements.docImage.style.display = "none";
       elements.docIframe.style.display = "block";
-      elements.docIframe.src = encodeURI(rutaCompleta); // Para PDFs/HTML usar ruta relativa
-
+      elements.docIframe.src = encodeURI(rutaCompleta);
       if (footer) footer.style.display = 'block';
     }
 
     docModalInstance.show();
   },
 
-  // 2. Cargar documentos desde la carpeta 'docs' en GitHub
+  // 2. Cargar documentos desde la carpeta 'docs' en GitHub - LÓGICA CORREGIDA
   async cargarDocumentosDesdeGithub() {
     this.documentosList = [];
-    try {
-        if (!this.tokenActual) {
-            this.container.innerHTML = `<div class="alert alert-info">Para cargar la lista de documentos, es necesario ingresar un token de acceso. Haga clic en **Subir Nuevo Documento** para ingresar su token y refrescar la lista.</div>`;
-            this.renderizarDocumentos([]); // Mostrar solo el botón de subir
-            return;
-        }
+    
+    // Mostrar spinner inicial
+    this.container.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando documentos...</p></div>`;
 
-        this.container.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando documentos desde GitHub...</p></div>`;
-        
+    if (!this.tokenActual) {
+      // Si no hay token, se muestra el botón para solicitarlo
+      this.container.innerHTML = `
+        <div class="alert alert-warning text-center">
+            <p>Para cargar la lista de documentos, es necesario un Token de Acceso Personal (PAT) de GitHub con permiso <code>contents:read</code>.</p>
+            <button class="btn btn-sm btn-info text-white" id="requestTokenBtn">
+                <i class="bi bi-key-fill me-1"></i> Ingresar Token y Cargar Documentos
+            </button>
+        </div>
+      `;
+      // Adjuntar el evento al botón para iniciar la solicitud de token
+      document.getElementById('requestTokenBtn').addEventListener('click', async () => {
+          try {
+              // Llamar a solicitarToken, con el mensaje adecuado
+              const token = await this.solicitarToken("Para visualizar los documentos, ingrese su Token (contents:read):", 'read');
+              // Si tiene éxito, recargar la lista
+              if (token) await this.cargarDocumentosDesdeGithub();
+          } catch (e) {
+              // Manejar silenciosamente la cancelación del prompt
+          }
+      });
+      this.renderizarDocumentos([]); // Renderizar solo el botón de subir/agregar
+      return;
+    }
+
+    try {
+        // Si el token existe, se intenta cargar los documentos
         const contenidos = await github.obtenerContenidoDeDirectorio(this.tokenActual, 'docs');
         this.documentosList = contenidos;
         this.renderizarDocumentos(contenidos);
@@ -118,20 +138,37 @@ const documentos = {
 
     } catch (error) {
       console.error('Error cargando documentos desde GitHub:', error);
-      this.container.innerHTML = `<div class="alert alert-danger">Error al cargar la lista de documentos: ${error.message}. Por favor, verifique su token o los permisos.</div>`;
+      // Si el token almacenado falló (expiró o no tiene permiso de lectura)
+      this.container.innerHTML = `<div class="alert alert-danger">Error al cargar la lista: ${error.message}.
+          <button class="btn btn-sm btn-warning mt-2" id="requestTokenBtn">
+              <i class="bi bi-key-fill me-1"></i> Re-ingresar Token
+          </button>
+      </div>`;
+      // Adjuntar el evento para reingresar el token
+      document.getElementById('requestTokenBtn').addEventListener('click', async () => {
+          try {
+              this.tokenActual = null; // Limpiar el token fallido para forzar el prompt
+              const token = await this.solicitarToken("El token almacenado falló. Por favor, re-ingrese su Token (contents:read):", 'read');
+              if (token) await this.cargarDocumentosDesdeGithub();
+          } catch (e) {
+              // Manejar silenciosamente la cancelación del prompt
+          }
+      });
       this.renderizarDocumentos([]); // Mostrar al menos el botón de subir
     }
   },
 
-  // 2. Renderizar la lista de documentos con botones
+  // 2. Renderizar la lista de documentos con botones (se mantiene)
   renderizarDocumentos(documentos) {
-    // Si hubo un error en la carga y el mensaje ya se insertó, no limpiar
-    if (this.container.querySelector('.alert-info') || this.container.querySelector('.alert-danger')) {
-         // Limpiamos solo para re-insertar la lista/botón si es necesario
-         const listContainer = this.container.querySelector('.list-group');
-         if(listContainer) listContainer.remove();
-         const addBtnContainer = this.container.querySelector('.btn-primary.w-100');
-         if(addBtnContainer) addBtnContainer.remove();
+    // Si hay un mensaje de alerta (advertencia/error), solo limpiamos la lista existente.
+    const hasInitialAlert = this.container.querySelector('.alert-warning') || this.container.querySelector('.alert-danger');
+    let listContainer = this.container.querySelector('.list-group');
+    let addBtnContainer = this.container.querySelector('.btn-primary.w-100');
+
+    // Si ya existe la lista y el botón, los removemos si hay una alerta para evitar duplicados.
+    if (hasInitialAlert) {
+      if(listContainer) listContainer.remove();
+      if(addBtnContainer) addBtnContainer.remove();
     } else {
         this.container.innerHTML = ""; // Limpiar el contenedor si la carga fue normal
     }
@@ -139,14 +176,13 @@ const documentos = {
     const ul = document.createElement("ul");
     ul.className = "list-group list-group-flush mb-3";
 
-    if (documentos.length === 0) {
+    if (documentos.length === 0 && !hasInitialAlert) {
         ul.innerHTML = '<li class="list-group-item text-muted">No hay documentos en la carpeta "docs".</li>';
-    } else {
+    } else if (documentos.length > 0) {
         documentos.forEach((doc) => {
           const li = document.createElement("li");
           li.className = "list-group-item d-flex justify-content-between align-items-center doc-item";
 
-          // Nombre del documento (clickable para visualizar)
           const nameSpan = document.createElement("span");
           nameSpan.textContent = doc.nombre;
           nameSpan.setAttribute("role", "button");
@@ -161,7 +197,7 @@ const documentos = {
           deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
           deleteBtn.title = `Eliminar ${doc.nombre}`;
           deleteBtn.onclick = (e) => {
-            e.stopPropagation(); // Evitar que se abra el modal de visualización
+            e.stopPropagation();
             this.eliminarDocumento(doc);
           };
 
@@ -170,6 +206,7 @@ const documentos = {
         });
     }
 
+    // Insertar la lista después de cualquier alerta/spinner/mensaje, pero antes del botón de subir
     this.container.appendChild(ul);
     
     // 2. Botón para agregar/subir un nuevo documento (al final)
@@ -187,18 +224,19 @@ const documentos = {
     }
 
     try {
-      const token = await this.solicitarToken();
+      // Solicitar token específicamente para escritura
+      const token = await this.solicitarToken("Para ELIMINAR, ingrese su Token (contents:write):", 'write');
       
-      const filePath = doc.archivo; // ej: 'docs/file.ext'
-      const sha = doc.sha; // Se obtuvo de github.obtenerContenidoDeDirectorio
+      const filePath = doc.archivo;
+      const sha = doc.sha; 
       
       if (!sha) {
           throw new Error("El documento no tiene un SHA asociado. No se puede eliminar.");
       }
       
-      await github.eliminarArchivoDeGitHub(token, filePath, `Eliminar documento: ${doc.nombre}`);
+      await github.eliminarArchivoDeGitHub(token, filePath, `Eliminar documento: ${doc.nombre}`, sha);
       
-      alert(`Documento ${doc.nombre} eliminado con éxito. La lista se actualizará.`);
+      alert(`Documento ${doc.nombre} eliminado con éxito.`);
       await this.cargarDocumentosDesdeGithub(); // Actualizar lista
       
     } catch (error) {
@@ -219,7 +257,8 @@ const documentos = {
     }
 
     try {
-      const token = await this.solicitarToken(); // Se solicita/verifica token
+      // Solicitar token específicamente para escritura
+      const token = await this.solicitarToken("Para SUBIR, ingrese su Token (contents:write):", 'write');
       
       const filePath = `docs/${fileName}`;
       const commitMessage = `Subir nuevo documento: ${fileName}`;
@@ -227,8 +266,8 @@ const documentos = {
       await github.subirArchivoAGitHub(token, filePath, fileContentBase64, commitMessage);
       
       alert(`Documento ${fileName} subido con éxito.`);
-      this.uploadModalInstance.hide(); // Cerrar modal al éxito
-      await this.cargarDocumentosDesdeGithub(); // Actualizar lista
+      this.uploadModalInstance.hide();
+      await this.cargarDocumentosDesdeGithub();
       
     } catch (error) {
       console.error("Error al subir documento:", error);
@@ -246,7 +285,6 @@ const documentos = {
       return;
     }
     
-    // Inicializar instancia del modal de subida
     this.uploadModalInstance = new bootstrap.Modal(uploadModalElement);
     
     // Evento para el botón de subida dentro del modal
@@ -260,7 +298,6 @@ const documentos = {
         const file = fileInput.files[0];
         const fileName = file.name;
         
-        // Función para leer el archivo como Base64 (requerido por la API de GitHub)
         const reader = new FileReader();
         reader.onload = async (e) => {
             const base64Content = e.target.result.split(',')[1];
@@ -269,16 +306,13 @@ const documentos = {
             const originalText = uploadBtn.innerHTML;
             
             try {
-                // Deshabilitar botón de subida y mostrar mensaje de espera
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Subiendo...';
 
                 await this.subirDocumento(fileName, base64Content);
                 fileInput.value = ''; // Limpiar input
             } catch (error) {
-                 // El error ya es manejado y muestra un alert en subirDocumento
             } finally {
-                // Re-habilitar botón y restablecer texto
                 uploadBtn.disabled = false;
                 uploadBtn.innerHTML = originalText;
             }
@@ -286,7 +320,7 @@ const documentos = {
         reader.onerror = (e) => {
             alert("Error al leer el archivo: " + e.target.error.name);
         };
-        reader.readAsDataURL(file); // Leer como Data URL para obtener Base64
+        reader.readAsDataURL(file);
     });
     
     // Cargar la lista inicial de documentos
