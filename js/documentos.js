@@ -2,7 +2,6 @@
 
 const documentos = {
   documentosList: [],
-  tokenActual: sessionStorage.getItem("githubToken") || null,
   container: null,
   uploadModalInstance: null,
 
@@ -99,11 +98,11 @@ const documentos = {
   async cargarDocumentosDesdeGithub() {
     const listContainer = document.getElementById('documentosListContainer');
     const initialMessage = document.getElementById('docsInitialMessage');
+    if (!listContainer || !initialMessage) return;
     
-    listContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando documentos...</p></div>`;
+    listContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Solicitando token y cargando documentos...</p></div>`;
     
     try {
-        // SOLO ESTA LÍNEA CAMBIA - usar github.obtenerToken()
         const token = github.obtenerToken(true, "visualizar documentos");
         if (!token) return;
         
@@ -112,10 +111,12 @@ const documentos = {
         
         initialMessage.style.display = 'none';
         this.renderizarDocumentos(contenidos);
+        
+        console.log('Documentos cargados desde GitHub:', contenidos.length);
 
     } catch (error) {
-      console.error('Error cargando documentos:', error);
-      listContainer.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+      console.error('Error cargando documentos desde GitHub:', error);
+      listContainer.innerHTML = `<div class="alert alert-danger">Error al cargar la lista de documentos: ${error.message}. Intente nuevamente.</div>`;
       initialMessage.style.display = 'block';
     }
   },
@@ -164,23 +165,16 @@ const documentos = {
 
   // Eliminar un documento
   async eliminarDocumento(doc) {
-    if (
-      !confirm(`¿Está seguro que desea eliminar el documento: ${doc.nombre}?`)
-    ) {
+    if (!confirm(`¿Está seguro que desea eliminar el documento: ${doc.nombre}?`)) {
       return;
     }
 
-    try {
-
-      await github.eliminarArchivoDeGitHub(
-        token,
-        doc.archivo,
-        `Eliminar documento: ${doc.nombre}`,
-        doc.sha
-      );
-
+    try {      
+      await github.eliminarArchivoDeGitHub(doc.archivo, `Eliminar documento: ${doc.nombre}`, doc.sha);
+      
       alert(`Documento ${doc.nombre} eliminado con éxito.`);
-      await this.cargarDocumentosDesdeGithub();
+      await this.cargarDocumentosDesdeGithub(); 
+      
     } catch (error) {
       console.error("Error al eliminar documento:", error);
       alert("No se pudo eliminar el documento: " + error.message);
@@ -194,14 +188,23 @@ const documentos = {
 
   // Subir el documento
   async subirDocumento(fileName, fileContentBase64) {
+    if (!fileName || !fileContentBase64) {
+        throw new Error("Faltan datos para la subida.");
+    }
+
     try {
       const filePath = `docs/${fileName}`;
-      await github.subirArchivoAGitHub(filePath, fileContentBase64, `Subir: ${fileName}`);
+      const commitMessage = `Subir nuevo documento: ${fileName}`;
+      
+      await github.subirArchivoAGitHub(filePath, fileContentBase64, commitMessage);
+      
       alert(`Documento ${fileName} subido con éxito.`);
       this.uploadModalInstance.hide();
       await this.cargarDocumentosDesdeGithub();
+      
     } catch (error) {
-      alert("Error al subir: " + error.message);
+      console.error("Error al subir documento:", error);
+      alert("No se pudo subir el documento: " + error.message);
     }
   },
 
