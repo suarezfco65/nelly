@@ -221,11 +221,11 @@ async manejarEnvioFormulario(e) {
       // ... (Código de renderizado de tabla que te di en el mensaje anterior)
       // Como referencia rápida para que no falte:
       const saldo = this.listaTransacciones.reduce((acc, t) => t.ingreso > 0 ? acc + t.ingreso : acc - t.egreso, 0);
-      let html = `<div class="alert alert-secondary">Saldo: Bs ${this.formatoNumero.format(saldo)}</div>`;
-      html += `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Desc</th><th>Monto</th></tr></thead><tbody>`;
+      let html = `<div class="alert ${saldo>0?'alert-success':'alert-danger'}">Saldo: Bs ${this.formatoNumero.format(saldo)}</div>`;
+      html += `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th></tr></thead><tbody>`;
       this.listaTransacciones.slice(0,10).forEach(t => {
           t.monto = t.ingreso > 0 ? t.ingreso : -t.egreso;
-          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'}">${this.formatoNumero.format(t.monto)}</td></tr>`;
+          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'} text-right">${this.formatoNumero.format(t.monto)}</td></tr>`;
       });
       html += `</tbody></table></div>`;
       this.container.innerHTML = html;
