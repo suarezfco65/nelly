@@ -199,36 +199,77 @@ async manejarEnvioFormulario(e) {
         const tipo = document.getElementById('tipo').value;
         const fecha = document.getElementById('fecha').value;
 
-        if (!monto || !descripcion) return;
-
-        feedback.innerHTML = `<div class="alert alert-info"><span class="spinner-border spinner-border-sm"></span> Guardando...</div>`;
-
-        // Lógica de token
-        if (!seguridad.gestionarTokens.tokenExiste()) {
-             throw new Error("No hay token activo. Recargue e ingrese su token.");
+        if (!monto || !descripcion) {
+             feedback.innerHTML = `<div class="alert alert-warning">Monto y descripción son obligatorios.</div>`;
+             return;
         }
 
-        const nuevaTx = { fecha, descripcion, tipo, monto, timestamp: Date.now() };
+        feedback.innerHTML = `<div class="alert alert-info"><span class="spinner-border spinner-border-sm"></span> Guardando en GitHub...</div>`;
+
+        // 🛑 Eliminamos la verificación de token de aquí, ya que se hizo en toggleFormulario.
+        // Ahora solo verificamos que la clave de encriptación exista.
+        const claveAcceso = sessionStorage.getItem("claveAcceso");
+        if (!claveAcceso) {
+             throw new Error("Clave de encriptación no encontrada. Por favor, reinicie la sesión.");
+        }
+        
+        // --- Lógica de la Transacción ---
+        
+        // 1. Obtener el saldo anterior
+        const saldoAnterior = this.listaTransacciones.length > 0 ? this.listaTransacciones[0].saldo : 0;
+        
+        // 2. Calcular el nuevo saldo y el monto real
+        let montoReal = 0;
+        let nuevoSaldo = saldoAnterior;
+        
+        if (tipo === 'ingreso') {
+            montoReal = monto;
+            nuevoSaldo += monto;
+        } else {
+            montoReal = monto;
+            nuevoSaldo -= monto;
+        }
+        
+        const nuevaTx = {
+            fecha,
+            descripcion,
+            ingreso: tipo === 'ingreso' ? montoReal : 0,
+            egreso: tipo === 'egreso' ? montoReal : 0,
+            saldo: nuevoSaldo,
+            timestamp: Date.now()
+        };
+
+        // 3. Agregar a la lista local (al principio)
         this.listaTransacciones.unshift(nuevaTx);
 
+        // 4. Preparar el JSON completo
         const contenidoJSON = JSON.stringify({ transacciones: this.listaTransacciones }, null, 2);
-        // Base64 seguro
+        
+        // 5. Convertir a Base64 (UTF-8 safe)
+        // Usamos btoa(unescape(encodeURIComponent())) para manejar caracteres especiales
         const contenidoBase64 = btoa(unescape(encodeURIComponent(contenidoJSON)));
 
-        // USAR github.js CON LA RUTA CORRECTA
+        // 6. Usar github.js para guardar (usa el token que ya está en sessionStorage)
         await github.guardarArchivo(
-            CONFIG.PATHS.TRANSACCIONES, // <-- Aquí estaba el error antes
+            CONFIG.PATHS.TRANSACCIONES, 
             contenidoBase64, 
-            `Nueva transacción: ${descripcion}`
+            `Tx: ${descripcion}`
         );
 
         feedback.innerHTML = `<div class="alert alert-success">Guardado correctamente.</div>`;
+        
+        // Limpiar y recargar UI
         document.getElementById('nuevaTransaccionForm').reset();
         this.renderizarUI();
-        setTimeout(() => { this.toggleFormulario(); feedback.innerHTML = ''; }, 2000);
+        setTimeout(() => {
+            this.toggleFormulario();
+            feedback.innerHTML = '';
+        }, 2000);
 
     } catch (error) {
-        console.error(error);
+        console.error("Error al enviar transacción:", error);
+        // Si hay error, revertimos el cambio local (opcional, pero buena práctica)
+        this.listaTransacciones.shift(); 
         feedback.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
     }
   },
