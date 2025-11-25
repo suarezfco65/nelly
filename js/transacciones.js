@@ -11,7 +11,7 @@ const transacciones = {
     this.inicializarEventos();
     await this.cargarTransacciones();
   },
-
+/*
   inicializarEventos() {
     const btnMostrar = document.getElementById('mostrarFormTransaccion');
     if (btnMostrar) {
@@ -25,7 +25,7 @@ const transacciones = {
 
     document.getElementById('cancelarTransaccion')?.addEventListener('click', () => this.toggleFormulario());
   },
-
+*/
   // --- API Dólar ---
   async obtenerTasasDolar() {
     try {
