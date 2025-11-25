@@ -1,14 +1,6 @@
 {
   "transacciones": [
     {
-      "fecha": "2025-11-25",
-      "descripcion": "Prueba",
-      "ingreso": 1000,
-      "egreso": 0,
-      "saldo": 3540,
-      "timestamp": 1764094883918
-    },
-    {
       "fecha": "2025-11-23",
       "descripcion": "Pago a Rosneify Rendon",
       "ingreso": 0,
