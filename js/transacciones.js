@@ -74,7 +74,7 @@ const transacciones = {
       this.mostrarError("Error cargando datos.");
     }
   },
-
+/*
 renderizarUI() {
     // 1. Obtener el saldo actual
     // En tu JSON, el registro 0 es el más reciente, por lo que tomamos ese saldo.
@@ -159,7 +159,7 @@ renderizarUI() {
           btn.style.display = 'block';
       }
   },
-
+*/
 async manejarEnvioFormulario(e) {
     e.preventDefault();
     const feedback = document.getElementById('feedbackTransaccion');
@@ -216,19 +216,19 @@ async manejarEnvioFormulario(e) {
          btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar Transacción (Sesión Activa)';
      }
   },
-/*
+
   renderizarUI() { /* Usar la versión anterior que te pasé en el mensaje previo */ 
       // ... (Código de renderizado de tabla que te di en el mensaje anterior)
       // Como referencia rápida para que no falte:
-      const saldo = this.listaTransacciones.reduce((acc, t) => t.tipo === 'ingreso' ? acc + t.monto : acc - t.monto, 0);
+      const saldo = this.listaTransacciones.reduce((acc, t) => t.ingreso > 0 ? acc + t.monto : acc - t.monto, 0);
       let html = `<div class="alert alert-secondary">Saldo: Bs ${this.formatoNumero.format(saldo)}</div>`;
       html += `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Desc</th><th>Monto</th></tr></thead><tbody>`;
       this.listaTransacciones.slice(0,10).forEach(t => {
-          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.tipo === 'ingreso' ? 'text-success' : 'text-danger'}">${t.monto}</td></tr>`;
+          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'}">${t.monto}</td></tr>`;
       });
       html += `</tbody></table></div>`;
       this.container.innerHTML = html;
-  },*/
+  },
   inicializarEventos() {
     document.getElementById('mostrarFormTransaccion')?.addEventListener('click', () => this.toggleFormulario());
     document.getElementById('nuevaTransaccionForm')?.addEventListener('submit', (e) => this.manejarEnvioFormulario(e));
