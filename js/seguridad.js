@@ -129,4 +129,3 @@ seguridad.gestionarTokens = {
     return !!sessionStorage.getItem('githubToken');
   }
 };
-};
