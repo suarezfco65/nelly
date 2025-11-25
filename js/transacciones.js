@@ -354,60 +354,38 @@ mostrarTransacciones(transacciones) {
 
   // Función para solicitar token inicial
   async solicitarTokenInicial() {
-    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para agregar transacciones:');
-    if (!githubToken) {
-      return;
-    }
+  try {
+    // Usar el sistema centralizado de tokens
+    await github.verificarToken();
     
     const feedback = document.getElementById('transaccionesContent');
     
-    try {
-      // Mostrar mensaje de verificación
-      const contenidoOriginal = feedback.innerHTML;
-      feedback.innerHTML = `
-        <div class="text-center py-4">
-          <div class="spinner-border" role="status">
-            <span class="visually-hidden">Verificando token...</span>
-          </div>
-          <p class="mt-2">Verificando token de GitHub...</p>
-        </div>
+    // Restaurar contenido y mostrar formulario
+    this.mostrarTransacciones((await fetch('json/transacciones.json').then(r => r.json())).transacciones);
+    
+    // Mostrar mensaje de éxito
+    setTimeout(() => {
+      const alerta = document.createElement('div');
+      alerta.className = 'alert alert-success alert-dismissible fade show';
+      alerta.innerHTML = `
+        <strong>✓ Token verificado correctamente</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       `;
-      
-      // Verificar token
-      const tokenValido = await github.verificarToken(githubToken);
-      if (!tokenValido) {
-        throw new Error('Token inválido o sin permisos suficientes');
-      }
-      
-      // Guardar token usando el sistema centralizado
-      seguridad.gestionarTokens.guardarToken(githubToken);
-      
-      // Restaurar contenido y mostrar formulario
-      this.mostrarTransacciones((await fetch('json/transacciones.json').then(r => r.json())).transacciones);
-      
-      // Mostrar mensaje de éxito
-      setTimeout(() => {
-        const alerta = document.createElement('div');
-        alerta.className = 'alert alert-success alert-dismissible fade show';
-        alerta.innerHTML = `
-          <strong>✓ Token verificado correctamente</strong>
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.getElementById('transaccionesContent').prepend(alerta);
-      }, 100);
-      
-      // Mostrar formulario
-      this.toggleFormulario();
-      
-    } catch (error) {
-      console.error('Error verificando token:', error);
-      this.mostrarError(`Error al verificar token: ${error.message}`);
-      // Recargar transacciones después de 3 segundos
-      setTimeout(() => {
-        this.cargarTransacciones();
-      }, 3000);
-    }
-  },
+      document.getElementById('transaccionesContent').prepend(alerta);
+    }, 100);
+    
+    // Mostrar formulario
+    this.toggleFormulario();
+    
+  } catch (error) {
+    console.error('Error verificando token:', error);
+    this.mostrarError(`Error al verificar token: ${error.message}`);
+    // Recargar transacciones después de 3 segundos
+    setTimeout(() => {
+      this.cargarTransacciones();
+    }, 3000);
+  }
+},
 
   // Función para limpiar formulario
   limpiarFormulario() {
