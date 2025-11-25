@@ -2,7 +2,7 @@
 
 const documentos = {
   documentosList: [],
-  // Mantenemos tokenActual en sessionStorage para recordar si el usuario ya lo proporcionó
+  // Mantenemos tokenActual en sessionStorage
   tokenActual: sessionStorage.getItem("githubToken") || null,
   container: null,
   uploadModalInstance: null,
@@ -14,7 +14,6 @@ const documentos = {
    * @returns {Promise<string>} El token validado.
    */
   async solicitarToken(promptMessage, requiredPermissions = 'read') {
-    // Si ya tenemos un token, lo devolvemos (asumiendo que es válido)
     if (this.tokenActual) {
       return this.tokenActual;
     }
@@ -22,8 +21,8 @@ const documentos = {
     const token = prompt(promptMessage || "Por favor, ingrese su Token de Acceso Personal (GitHub PAT):");
     if (!token) throw new Error("Operación cancelada: Token no proporcionado.");
     
-    // Verificamos si el token es válido
     try {
+        // Asumiendo que github.js está configurado para usar el proxy y verificar el token
         await github.verificarToken(token); 
         this.tokenActual = token;
         sessionStorage.setItem("githubToken", token);
@@ -63,7 +62,6 @@ const documentos = {
 
     elements.docModalTitle.textContent = elemento.textContent.trim();
     
-    // Limpiar manejador de errores anterior
     if (state.imageErrorHandler) {
       elements.docImage.removeEventListener("error", state.imageErrorHandler);
     }
@@ -74,9 +72,9 @@ const documentos = {
       elements.docIframe.style.display = "none";
       elements.docImage.style.display = "block";
       
-      // Construir la URL raw para imágenes
       const githubUser = CONFIG.GITHUB.OWNER;
       const githubRepo = CONFIG.GITHUB.REPO;
+      // Usar la URL raw para que el navegador pueda mostrar la imagen directamente
       const rawUrl = `https://raw.githubusercontent.com/${githubUser}/${githubRepo}/${CONFIG.GITHUB.BRANCH}/${archivo}`;
       
       elements.docImage.src = encodeURI(rawUrl);
@@ -97,88 +95,86 @@ const documentos = {
     docModalInstance.show();
   },
 
-  // 2. Cargar documentos desde la carpeta 'docs' en GitHub - LÓGICA CORREGIDA
-  async cargarDocumentosDesdeGithub() {
-    this.documentosList = [];
+  // NUEVO: Renderiza el botón de carga inicial o el mensaje de error
+  renderizarEstadoInicial() {
+    this.container.innerHTML = `
+      <div class="alert alert-info text-center p-4" id="docsInitialMessage">
+          <p class="mb-3">Los documentos están protegidos y requieren su Token de Acceso Personal (PAT) de GitHub con permiso <code>contents:read</code> para ser listados.</p>
+          <button class="btn btn-success" id="mostrarDocsBtn">
+              <i class="bi bi-folder-check me-2"></i> Mostrar Documentos
+          </button>
+      </div>
+      <div id="documentosListContainer" class="mt-4">
+          </div>
+      <div id="documentosAddBtnContainer" class="mt-3">
+          </div>
+    `;
     
-    // Mostrar spinner inicial
-    this.container.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando documentos...</p></div>`;
-
-    if (!this.tokenActual) {
-      // Si no hay token, se muestra el botón para solicitarlo
-      this.container.innerHTML = `
-        <div class="alert alert-warning text-center">
-            <p>Para cargar la lista de documentos, es necesario un Token de Acceso Personal (PAT) de GitHub con permiso <code>contents:read</code>.</p>
-            <button class="btn btn-sm btn-info text-white" id="requestTokenBtn">
-                <i class="bi bi-key-fill me-1"></i> Ingresar Token y Cargar Documentos
-            </button>
-        </div>
-      `;
-      // Adjuntar el evento al botón para iniciar la solicitud de token
-      document.getElementById('requestTokenBtn').addEventListener('click', async () => {
-          try {
-              // Llamar a solicitarToken, con el mensaje adecuado
-              const token = await this.solicitarToken("Para visualizar los documentos, ingrese su Token (contents:read):", 'read');
-              // Si tiene éxito, recargar la lista
-              if (token) await this.cargarDocumentosDesdeGithub();
-          } catch (e) {
-              // Manejar silenciosamente la cancelación del prompt
-          }
-      });
-      this.renderizarDocumentos([]); // Renderizar solo el botón de subir/agregar
-      return;
+    // Adjuntar evento al nuevo botón "Mostrar Documentos"
+    const mostrarDocsBtn = document.getElementById('mostrarDocsBtn');
+    if (mostrarDocsBtn) {
+        mostrarDocsBtn.addEventListener('click', () => this.cargarDocumentosDesdeGithub());
     }
+    
+    // Renderizar el botón de subir
+    this.renderizarBotonSubir();
+  },
+  
+  // Función auxiliar para renderizar el botón de subir
+  renderizarBotonSubir() {
+      const btnContainer = document.getElementById('documentosAddBtnContainer');
+      if (!btnContainer) return;
+      
+      btnContainer.innerHTML = ''; // Limpiar por si acaso
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn btn-primary w-100";
+      addBtn.innerHTML = '<i class="bi bi-upload me-2"></i> Subir Nuevo Documento';
+      addBtn.onclick = () => this.mostrarModalSubida();
+      btnContainer.appendChild(addBtn);
+  },
 
+  // 2. Cargar documentos desde la carpeta 'docs' en GitHub - LÓGICA ACTIVADA POR BOTÓN
+  async cargarDocumentosDesdeGithub() {
+    const listContainer = document.getElementById('documentosListContainer');
+    const initialMessage = document.getElementById('docsInitialMessage');
+    if (!listContainer || !initialMessage) return;
+    
+    // 1. Mostrar estado de carga y solicitar token
+    listContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Solicitando token y cargando documentos...</p></div>`;
+    
     try {
-        // Si el token existe, se intenta cargar los documentos
-        const contenidos = await github.obtenerContenidoDeDirectorio(this.tokenActual, 'docs');
+        // Solicitar/Verificar el token
+        const token = await this.solicitarToken("Para VISUALIZAR los documentos, ingrese su Token (contents:read):", 'read');
+        
+        // 2. Obtener contenidos
+        const contenidos = await github.obtenerContenidoDeDirectorio(token, 'docs');
         this.documentosList = contenidos;
+        
+        // 3. Renderizar lista y eliminar el mensaje inicial de solicitud
+        initialMessage.style.display = 'none'; // Ocultar el mensaje de solicitud de token
         this.renderizarDocumentos(contenidos);
+        
         console.log('Documentos cargados desde GitHub:', contenidos.length);
 
     } catch (error) {
       console.error('Error cargando documentos desde GitHub:', error);
-      // Si el token almacenado falló (expiró o no tiene permiso de lectura)
-      this.container.innerHTML = `<div class="alert alert-danger">Error al cargar la lista: ${error.message}.
-          <button class="btn btn-sm btn-warning mt-2" id="requestTokenBtn">
-              <i class="bi bi-key-fill me-1"></i> Re-ingresar Token
-          </button>
-      </div>`;
-      // Adjuntar el evento para reingresar el token
-      document.getElementById('requestTokenBtn').addEventListener('click', async () => {
-          try {
-              this.tokenActual = null; // Limpiar el token fallido para forzar el prompt
-              const token = await this.solicitarToken("El token almacenado falló. Por favor, re-ingrese su Token (contents:read):", 'read');
-              if (token) await this.cargarDocumentosDesdeGithub();
-          } catch (e) {
-              // Manejar silenciosamente la cancelación del prompt
-          }
-      });
-      this.renderizarDocumentos([]); // Mostrar al menos el botón de subir
+      listContainer.innerHTML = `<div class="alert alert-danger">Error al cargar la lista de documentos: ${error.message}. Intente nuevamente.</div>`;
+      // Mostrar nuevamente el botón si hubo un error irrecuperable (ej: token inválido)
+      initialMessage.style.display = 'block';
     }
   },
 
-  // 2. Renderizar la lista de documentos con botones (se mantiene)
+  // 2. Renderizar la lista de documentos con botones (solo la lista dentro del contenedor)
   renderizarDocumentos(documentos) {
-    // Si hay un mensaje de alerta (advertencia/error), solo limpiamos la lista existente.
-    const hasInitialAlert = this.container.querySelector('.alert-warning') || this.container.querySelector('.alert-danger');
-    let listContainer = this.container.querySelector('.list-group');
-    let addBtnContainer = this.container.querySelector('.btn-primary.w-100');
-
-    // Si ya existe la lista y el botón, los removemos si hay una alerta para evitar duplicados.
-    if (hasInitialAlert) {
-      if(listContainer) listContainer.remove();
-      if(addBtnContainer) addBtnContainer.remove();
-    } else {
-        this.container.innerHTML = ""; // Limpiar el contenedor si la carga fue normal
-    }
-
+    const listContainer = document.getElementById('documentosListContainer');
+    listContainer.innerHTML = '';
+    
     const ul = document.createElement("ul");
     ul.className = "list-group list-group-flush mb-3";
 
-    if (documentos.length === 0 && !hasInitialAlert) {
+    if (documentos.length === 0) {
         ul.innerHTML = '<li class="list-group-item text-muted">No hay documentos en la carpeta "docs".</li>';
-    } else if (documentos.length > 0) {
+    } else {
         documentos.forEach((doc) => {
           const li = document.createElement("li");
           li.className = "list-group-item d-flex justify-content-between align-items-center doc-item";
@@ -206,25 +202,16 @@ const documentos = {
         });
     }
 
-    // Insertar la lista después de cualquier alerta/spinner/mensaje, pero antes del botón de subir
-    this.container.appendChild(ul);
-    
-    // 2. Botón para agregar/subir un nuevo documento (al final)
-    const addBtn = document.createElement("button");
-    addBtn.className = "btn btn-primary w-100 mt-3";
-    addBtn.innerHTML = '<i class="bi bi-upload me-2"></i> Subir Nuevo Documento';
-    addBtn.onclick = () => this.mostrarModalSubida();
-    this.container.appendChild(addBtn);
+    listContainer.appendChild(ul);
   },
 
-  // 4. Eliminar un documento
+  // 4. Eliminar un documento (se mantiene)
   async eliminarDocumento(doc) {
     if (!confirm(`¿Está seguro que desea eliminar el documento: ${doc.nombre}?`)) {
       return;
     }
 
     try {
-      // Solicitar token específicamente para escritura
       const token = await this.solicitarToken("Para ELIMINAR, ingrese su Token (contents:write):", 'write');
       
       const filePath = doc.archivo;
@@ -237,7 +224,7 @@ const documentos = {
       await github.eliminarArchivoDeGitHub(token, filePath, `Eliminar documento: ${doc.nombre}`, sha);
       
       alert(`Documento ${doc.nombre} eliminado con éxito.`);
-      await this.cargarDocumentosDesdeGithub(); // Actualizar lista
+      await this.cargarDocumentosDesdeGithub(); 
       
     } catch (error) {
       console.error("Error al eliminar documento:", error);
@@ -245,19 +232,18 @@ const documentos = {
     }
   },
 
-  // 5. Mostrar modal para subir documento
+  // 5. Mostrar modal para subir documento (se mantiene)
   mostrarModalSubida() {
     this.uploadModalInstance.show();
   },
 
-  // 5. Subir el documento
+  // 5. Subir el documento (se mantiene)
   async subirDocumento(fileName, fileContentBase64) {
     if (!fileName || !fileContentBase64) {
         throw new Error("Faltan datos para la subida.");
     }
 
     try {
-      // Solicitar token específicamente para escritura
       const token = await this.solicitarToken("Para SUBIR, ingrese su Token (contents:write):", 'write');
       
       const filePath = `docs/${fileName}`;
@@ -275,25 +261,22 @@ const documentos = {
     }
   },
 
-// Inicializar pestaña de documentos
+  // Inicializar pestaña de documentos (Modificado para solo renderizar el estado inicial)
   inicializar() {
     this.container = document.getElementById("docsContent");
     const uploadModalElement = document.getElementById("uploadDocModal");
 
-    // CRÍTICO: Si no se encuentra el contenedor principal, salir.
     if (!this.container) {
       console.error("No se encontró el contenedor docsContent");
       return;
     }
     
-    // CRÍTICO: SOLO inicializar y adjuntar eventos del modal si los elementos existen.
+    // 1. Inicialización de MODAL (Mantenido por robustez)
     if (uploadModalElement) {
         this.uploadModalInstance = new bootstrap.Modal(uploadModalElement);
-        
         const uploadDocBtn = document.getElementById("uploadDocBtn");
         
         if (uploadDocBtn) {
-            // Evento para el botón de subida dentro del modal
             uploadDocBtn.addEventListener("click", async () => {
                 const fileInput = document.getElementById("docFileInput");
                 if (fileInput.files.length === 0) {
@@ -315,9 +298,8 @@ const documentos = {
                         uploadBtn.disabled = true;
                         uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Subiendo...';
 
-                        // 5. Llamada a la función de subida
                         await this.subirDocumento(fileName, base64Content);
-                        fileInput.value = ''; // Limpiar input
+                        fileInput.value = ''; 
                     } catch (error) {
                     } finally {
                         uploadBtn.disabled = false;
@@ -331,9 +313,10 @@ const documentos = {
             });
         }
     } else {
-        console.warn("No se encontró el modal de subida de documentos (#uploadDocModal). Las funciones de subir no funcionarán.");
+        console.warn("No se encontró el modal de subida de documentos (#uploadDocModal).");
     }
     
-    // Cargar la lista inicial de documentos - ESTO DEBE EJECUTARSE SIEMPRE
-    this.cargarDocumentosDesdeGithub();
-  },};
+    // 2. Mostrar el estado inicial con el botón "Mostrar Documentos"
+    this.renderizarEstadoInicial();
+  },
+};
