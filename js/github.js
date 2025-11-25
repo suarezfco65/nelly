@@ -217,15 +217,20 @@ async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
   },
 
   // Función para guardar archivo
-  async guardarArchivo(filePath, content, commitMessage) {
-    const payload = {
-      message: commitMessage,
-      content: content,
-      branch: CONFIG.GITHUB.BRANCH,
-    };
-    
-    return await this._fetchProxy('updateFile', filePath, payload, true);
-  },
+  async guardarArchivo(filePath, content, commitMessage, sha = null) {
+  const payload = {
+    message: commitMessage,
+    content: content,
+    branch: CONFIG.GITHUB.BRANCH,
+  };
+  
+  // NUEVO: Incluir SHA si se proporciona
+  if (sha) {
+    payload.sha = sha;
+  }
+  
+  return await this._fetchProxy('updateFile', filePath, payload, true);
+},
 
   // Función para eliminar archivo
   async eliminarArchivoDeGitHub(filePath, commitMessage, sha) {
