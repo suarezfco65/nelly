@@ -216,7 +216,7 @@ async manejarEnvioFormulario(e) {
          btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar Transacción (Sesión Activa)';
      }
   },
-
+/*
   renderizarUI() { /* Usar la versión anterior que te pasé en el mensaje previo */ 
       // ... (Código de renderizado de tabla que te di en el mensaje anterior)
       // Como referencia rápida para que no falte:
@@ -228,7 +228,7 @@ async manejarEnvioFormulario(e) {
       });
       html += `</tbody></table></div>`;
       this.container.innerHTML = html;
-  },
+  },*/
   inicializarEventos() {
     document.getElementById('mostrarFormTransaccion')?.addEventListener('click', () => this.toggleFormulario());
     document.getElementById('nuevaTransaccionForm')?.addEventListener('submit', (e) => this.manejarEnvioFormulario(e));
