@@ -107,6 +107,7 @@ const github = {
 
     return await updateResponse.json();
   },
+  
   /**
    * Elimina un archivo de GitHub
    * @param {string} filePath - La ruta completa del archivo (e.g., 'docs/archivo.pdf')
@@ -137,7 +138,9 @@ const github = {
         const fileData = await getResponse.json();
         sha = fileData.sha;
       } else {
-        throw new Error(`Archivo no encontrado: ${filePath}`);
+        // Si el archivo no existe, consideramos la eliminación como exitosa
+        console.warn(`Archivo no encontrado en GitHub: ${filePath}`);
+        return { status: 'skipped', message: 'Archivo no encontrado' };
       }
     } catch (error) {
       console.error("Error obteniendo SHA del archivo:", error);
@@ -172,7 +175,6 @@ const github = {
 
     return await deleteResponse.json();
   },
-
   
 };
 
