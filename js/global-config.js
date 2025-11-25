@@ -13,6 +13,12 @@ const CONFIG = {
     FILE_PATH: "json/datos-basicos-encriptado.json",
     API_BASE: "https://api.github.com/repos/suarezfco65/nelly",
   },
+
+  // NUEVO: Configuración para el proxy
+  PROXY_URL: "/api/proxy",
+
+  // NUEVO: URL base para la API de GitHub (usada en proxy)
+  GITHUB_API_BASE: "https://api.github.com/repos/suarezfco65/nelly",
 };
 
 // Se hace la configuración globalmente accesible (window.CONFIG)
