@@ -516,10 +516,130 @@ const documentos = {
     });
   },
 
-  // Eliminar documento
-  eliminarDocumento(rowElement) {
-    if (confirm("¿Está seguro de eliminar este documento?")) {
+  // Eliminar documento (modificada)
+  async eliminarDocumento(rowElement) {
+    const nombre = rowElement.querySelector('.input-nombre').value;
+    const archivo = rowElement.querySelector('.input-archivo').value;
+    
+    const confirmacion = confirm(`¿Está seguro de eliminar el documento "${nombre}"?\n\nEsta acción eliminará tanto el registro como el archivo físico de GitHub.`);
+    
+    if (!confirmacion) return;
+
+    try {
+      // Mostrar feedback de eliminación
+      const feedback = document.getElementById("feedbackDocumentos");
+      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Eliminando documento de GitHub...</div>`;
+
+      // Eliminar archivo físico de GitHub
+      await this.eliminarArchivoGitHub(archivo, this.tokenActual);
+
+      // Eliminar la fila de la tabla
       rowElement.remove();
+
+      feedback.innerHTML = `<div class="alert alert-success">Documento eliminado exitosamente</div>`;
+      
+      // Limpiar feedback después de 3 segundos
+      setTimeout(() => {
+        feedback.innerHTML = '';
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error eliminando documento:', error);
+      const feedback = document.getElementById("feedbackDocumentos");
+      feedback.innerHTML = `<div class="alert alert-danger">Error al eliminar documento: ${error.message}</div>`;
+    }
+  },
+
+  // Nueva función para eliminar archivo físico de GitHub
+  async eliminarArchivoGitHub(rutaArchivo, githubToken) {
+    try {
+      // Construir la ruta completa en el repositorio
+      const rutaCompleta = `docs/${rutaArchivo}`;
+      
+      // Primero obtener el SHA del archivo actual
+      const config = CONFIG.GITHUB;
+      const getResponse = await fetch(
+        `${config.API_BASE}/contents/${rutaCompleta}`,
+        {
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: "application/vnd.github.v3+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+
+      if (!getResponse.ok) {
+        // Si el archivo no existe, solo continuamos con la eliminación del registro
+        console.warn(`Archivo no encontrado en GitHub: ${rutaCompleta}`);
+        return;
+      }
+
+      const fileData = await getResponse.json();
+      const sha = fileData.sha;
+
+      // Eliminar el archivo de GitHub
+      const deleteResponse = await fetch(
+        `${config.API_BASE}/contents/${rutaCompleta}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: "application/vnd.github.v3+json",
+            "Content-Type": "application/json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+          body: JSON.stringify({
+            message: `Eliminar archivo: ${rutaArchivo}`,
+            sha: sha,
+            branch: config.BRANCH,
+          }),
+        }
+      );
+
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json();
+        throw new Error(`Error al eliminar archivo: ${errorData.message}`);
+      }
+
+      console.log(`Archivo eliminado de GitHub: ${rutaCompleta}`);
+      
+    } catch (error) {
+      console.error("Error en eliminarArchivoGitHub:", error);
+      throw error;
+    }
+  },
+
+  // Modificar la función de guardado para manejar eliminaciones pendientes
+  async manejarGuardadoDocumentos() {
+    const feedback = document.getElementById("feedbackDocumentos");
+
+    try {
+      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
+
+      if (!this.tokenActual) {
+        throw new Error("Token no disponible.");
+      }
+
+      const nuevosDocumentos = this.obtenerDatosFormulario();
+
+      if (nuevosDocumentos.length === 0) {
+        throw new Error("Debe haber al menos un documento.");
+      }
+
+      // Guardar la nueva lista en GitHub
+      await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
+
+      feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
+
+      this.documentosList = nuevosDocumentos;
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error modificando documentos:", error);
+      feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}</div>`;
     }
   },
 
@@ -571,7 +691,7 @@ const documentos = {
     this.renderizarDocumentos(this.documentosList);
   },
 
-  // Manejar guardado de documentos
+// Modificar la función de guardado para manejar eliminaciones pendientes
   async manejarGuardadoDocumentos() {
     const feedback = document.getElementById("feedbackDocumentos");
 
@@ -588,6 +708,7 @@ const documentos = {
         throw new Error("Debe haber al menos un documento.");
       }
 
+      // Guardar la nueva lista en GitHub
       await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
