@@ -586,7 +586,12 @@ async guardarEnGitHub(datosModificados) {
   }
 },
 
-  inicializar() {
+inicializar() {
+  try {
     this.cargarDatos();
-  },
+  } catch (error) {
+    console.error("Error en inicialización:", error);
+    this.mostrarError("Error al inicializar los datos básicos");
+  }
+},
 };
