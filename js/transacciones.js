@@ -148,16 +148,45 @@ renderizarUI() {
   },
 */
   // --- Lógica del Formulario ---
+  /**
+   * Muestra/Oculta el formulario de transacción y solicita el token si es necesario.
+   */
   toggleFormulario() {
-      const form = document.getElementById('formTransaccion');
-      const btn = document.getElementById('mostrarFormTransaccion');
-      if (form.style.display === 'none') {
-          form.style.display = 'block';
-          btn.style.display = 'none';
-      } else {
-          form.style.display = 'none';
-          btn.style.display = 'block';
+    const form = document.getElementById('formTransaccion');
+    const btn = document.getElementById('mostrarFormTransaccion');
+
+    // 1. Si el formulario está oculto, intentaremos mostrarlo
+    if (form.style.display === 'none' || form.style.display === '') {
+      // CRÍTICO: Verificar si el token existe
+      if (!seguridad.gestionarTokens.tokenExiste()) {
+        try {
+          // Si no hay token en sessionStorage, se pide directamente mediante prompt.
+          // La función obtenerToken de github.js se encargará de solicitarlo y guardarlo.
+          const token = github.obtenerToken(
+            true, // Solicitar si falta
+            "agregar una transacción"
+          );
+          if (!token) {
+            // Si el usuario cancela el prompt, no hacemos nada y salimos.
+            alert("Debe proporcionar un Token de GitHub para poder agregar transacciones.");
+            return; 
+          }
+        } catch(e) {
+            // Esto solo ocurre si github.js falla.
+            console.error("Error al obtener token:", e);
+            return;
+        }
       }
+
+      // Si el token ya existe o el usuario lo acaba de ingresar:
+      form.style.display = 'block';
+      btn.style.display = 'none';
+      document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+    } else {
+      // 2. Si el formulario está visible, lo ocultamos
+      form.style.display = 'none';
+      btn.style.display = 'block';
+    }
   },
 
 async manejarEnvioFormulario(e) {
