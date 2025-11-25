@@ -111,4 +111,22 @@ const seguridad = {
       return false;
     }
   },
+  // Agregar al final de seguridad.js
+seguridad.gestionarTokens = {
+  guardarToken: function(token) {
+    sessionStorage.setItem('githubToken', token);
+  },
+  
+  obtenerToken: function() {
+    return sessionStorage.getItem('githubToken');
+  },
+  
+  eliminarToken: function() {
+    sessionStorage.removeItem('githubToken');
+  },
+  
+  tokenExiste: function() {
+    return !!sessionStorage.getItem('githubToken');
+  }
+};
 };
