@@ -1,11 +1,11 @@
-// documentos.js - VERSIÓN CON NUEVO FLUJO DE AGREGAR DOCUMENTOS
+// documentos.js - VERSIÓN COMPLETA CON GESTIÓN CRUD Y SUBIDA DE ARCHIVOS
 
 const documentos = {
   documentosList: [],
   tokenActual: null,
   isModifying: false,
   container: null,
-  archivoSubido: null, // Para almacenar la información del archivo subido
+  archivoSubido: null,
 
   // Función para determinar el tipo de archivo
   obtenerTipoArchivo(nombreArchivo) {
@@ -464,7 +464,13 @@ const documentos = {
   // Agregar fila a la tabla de documentos
   agregarFilaDocumento(nombre, archivo) {
     const tableBody = document.getElementById("documentosTableBody");
-    const newIndex = tableBody.children.length;
+    const newIndex = this.documentosList.length;
+
+    // Agregar a la lista en memoria
+    this.documentosList.push({
+      nombre: nombre,
+      archivo: archivo
+    });
 
     const newRow = document.createElement("tr");
     newRow.dataset.index = newIndex;
@@ -516,113 +522,107 @@ const documentos = {
     });
   },
 
-  // Eliminar documento (modificada)
-async eliminarDocumento(rowElement) {
-  const nombre = rowElement.querySelector('.input-nombre').value;
-  const archivo = rowElement.querySelector('.input-archivo').value;
-  
-  const confirmacion = confirm(
-    `¿ESTÁ SEGURO DE ELIMINAR ESTE DOCUMENTO?\n\n` +
-    `Documento: ${nombre}\n` +
-    `Archivo: ${archivo}\n\n` +
-    `Esta acción:\n` +
-    `• Eliminará el registro de la lista\n` +
-    `• Eliminará el archivo físico de GitHub\n` +
-    `• No se puede deshacer`
-  );
-  
-  if (!confirmacion) return;
-
-  try {
-    const feedback = document.getElementById("feedbackDocumentos");
-    feedback.innerHTML = `<div class="alert alert-warning">
-      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-      Eliminando documento "${nombre}" de GitHub...
-    </div>`;
-
-    // Eliminar archivo físico de GitHub
-    await this.eliminarArchivoGitHub(archivo, this.tokenActual);
-
-    // Eliminar la fila de la tabla
-    rowElement.remove();
-
-    feedback.innerHTML = `<div class="alert alert-success">
-      <strong>✓ Documento eliminado exitosamente</strong><br>
-      <small>El archivo "${archivo}" ha sido eliminado de GitHub</small>
-    </div>`;
+  // Eliminar documento (versión completa con eliminación física y actualización JSON)
+  async eliminarDocumento(rowElement) {
+    const nombre = rowElement.querySelector('.input-nombre').value;
+    const archivo = rowElement.querySelector('.input-archivo').value;
+    const index = parseInt(rowElement.dataset.index);
     
-    setTimeout(() => {
-      feedback.innerHTML = '';
-    }, 5000);
-
-  } catch (error) {
-    console.error('Error eliminando documento:', error);
-    const feedback = document.getElementById("feedbackDocumentos");
-    feedback.innerHTML = `<div class="alert alert-danger">
-      <strong>Error al eliminar documento</strong><br>
-      <small>${error.message}</small>
-    </div>`;
-  }
-},
-
-  // Nueva función para eliminar archivo físico de GitHub
-async eliminarArchivoGitHub(rutaArchivo, githubToken) {
-  try {
-    // Construir la ruta completa en el repositorio
-    const rutaCompleta = `docs/${rutaArchivo}`;
-    
-    // Usar la función del módulo github
-    await github.eliminarArchivo(
-      rutaCompleta,
-      githubToken,
-      `Eliminar archivo: ${rutaArchivo}`
+    const confirmacion = confirm(
+      `¿ESTÁ SEGURO DE ELIMINAR ESTE DOCUMENTO?\n\n` +
+      `Documento: ${nombre}\n` +
+      `Archivo: ${archivo}\n\n` +
+      `Esta acción:\n` +
+      `• Eliminará el registro de la lista\n` +
+      `• Eliminará el archivo físico de GitHub\n` +
+      `• Actualizará el JSON de documentos\n` +
+      `• No se puede deshacer`
     );
-
-    console.log(`Archivo eliminado de GitHub: ${rutaCompleta}`);
     
-  } catch (error) {
-    console.error("Error en eliminarArchivoGitHub:", error);
-    
-    // Si el error es que el archivo no existe, continuamos igual
-    if (error.message.includes('no encontrado') || error.message.includes('not found')) {
-      console.warn(`Archivo no encontrado en GitHub: ${rutaArchivo}, continuando...`);
-      return;
-    }
-    
-    throw error;
-  }
-},
-
-  // Modificar la función de guardado para manejar eliminaciones pendientes
-  async manejarGuardadoDocumentos() {
-    const feedback = document.getElementById("feedbackDocumentos");
+    if (!confirmacion) return;
 
     try {
-      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
+      const feedback = document.getElementById("feedbackDocumentos");
+      feedback.innerHTML = `<div class="alert alert-warning">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        Eliminando documento "${nombre}" de GitHub...
+      </div>`;
 
-      if (!this.tokenActual) {
-        throw new Error("Token no disponible.");
-      }
+      // 1. Eliminar archivo físico de GitHub
+      await this.eliminarArchivoGitHub(archivo, this.tokenActual);
 
-      const nuevosDocumentos = this.obtenerDatosFormulario();
+      // 2. Eliminar el documento de la lista en memoria
+      this.documentosList.splice(index, 1);
 
-      if (nuevosDocumentos.length === 0) {
-        throw new Error("Debe haber al menos un documento.");
-      }
+      // 3. Actualizar el JSON de documentos en GitHub
+      await this.guardarEnGitHub(this.documentosList, this.tokenActual, `Eliminar documento: ${nombre}`);
 
-      // Guardar la nueva lista en GitHub
-      await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
+      // 4. Eliminar la fila de la tabla
+      rowElement.remove();
 
-      feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
+      // 5. Reindexar las filas restantes
+      this.reindexarFilasDocumentos();
 
-      this.documentosList = nuevosDocumentos;
+      feedback.innerHTML = `<div class="alert alert-success">
+        <strong>✓ Documento eliminado exitosamente</strong><br>
+        <small>El archivo "${archivo}" ha sido eliminado de GitHub y el JSON ha sido actualizado</small>
+      </div>`;
+      
       setTimeout(() => {
-        location.reload();
-      }, 2000);
+        feedback.innerHTML = '';
+      }, 5000);
 
     } catch (error) {
-      console.error("Error modificando documentos:", error);
-      feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}</div>`;
+      console.error('Error eliminando documento:', error);
+      const feedback = document.getElementById("feedbackDocumentos");
+      feedback.innerHTML = `<div class="alert alert-danger">
+        <strong>Error al eliminar documento</strong><br>
+        <small>${error.message}</small>
+      </div>`;
+    }
+  },
+
+  // Función para reindexar las filas después de eliminar
+  reindexarFilasDocumentos() {
+    const tableBody = document.getElementById("documentosTableBody");
+    const filas = tableBody.querySelectorAll("tr.fila-documento-mod");
+    
+    filas.forEach((fila, nuevoIndex) => {
+      fila.dataset.index = nuevoIndex;
+      
+      // Actualizar el data-index del botón eliminar
+      const btnEliminar = fila.querySelector('.btn-eliminar-documento');
+      if (btnEliminar) {
+        btnEliminar.dataset.index = nuevoIndex;
+      }
+    });
+  },
+
+  // Función para eliminar archivo físico de GitHub
+  async eliminarArchivoGitHub(rutaArchivo, githubToken) {
+    try {
+      // Construir la ruta completa en el repositorio
+      const rutaCompleta = `docs/${rutaArchivo}`;
+      
+      // Usar la función del módulo github
+      await github.eliminarArchivo(
+        rutaCompleta,
+        githubToken,
+        `Eliminar archivo: ${rutaArchivo}`
+      );
+
+      console.log(`Archivo eliminado de GitHub: ${rutaCompleta}`);
+      
+    } catch (error) {
+      console.error("Error en eliminarArchivoGitHub:", error);
+      
+      // Si el error es que el archivo no existe, continuamos igual
+      if (error.message.includes('no encontrado') || error.message.includes('not found')) {
+        console.warn(`Archivo no encontrado en GitHub: ${rutaArchivo}, continuando...`);
+        return;
+      }
+      
+      throw error;
     }
   },
 
@@ -674,7 +674,7 @@ async eliminarArchivoGitHub(rutaArchivo, githubToken) {
     this.renderizarDocumentos(this.documentosList);
   },
 
-// Modificar la función de guardado para manejar eliminaciones pendientes
+  // Manejar guardado de documentos
   async manejarGuardadoDocumentos() {
     const feedback = document.getElementById("feedbackDocumentos");
 
@@ -685,18 +685,21 @@ async eliminarArchivoGitHub(rutaArchivo, githubToken) {
         throw new Error("Token no disponible.");
       }
 
+      // Obtener datos actualizados del formulario
       const nuevosDocumentos = this.obtenerDatosFormulario();
 
       if (nuevosDocumentos.length === 0) {
         throw new Error("Debe haber al menos un documento.");
       }
 
-      // Guardar la nueva lista en GitHub
-      await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
+      // Actualizar la lista en memoria
+      this.documentosList = nuevosDocumentos;
+
+      // Guardar en GitHub
+      await this.guardarEnGitHub(this.documentosList, this.tokenActual);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
 
-      this.documentosList = nuevosDocumentos;
       setTimeout(() => {
         location.reload();
       }, 2000);
@@ -731,7 +734,7 @@ async eliminarArchivoGitHub(rutaArchivo, githubToken) {
   },
 
   // Guardar en GitHub
-  async guardarEnGitHub(documentos, githubToken) {
+  async guardarEnGitHub(documentos, githubToken, commitMessage = "Actualizar lista de documentos") {
     try {
       const contenidoJSON = JSON.stringify(documentos, null, 2);
       const contenidoBase64 = btoa(unescape(encodeURIComponent(contenidoJSON)));
@@ -740,7 +743,7 @@ async eliminarArchivoGitHub(rutaArchivo, githubToken) {
         "json/documentos.json",
         contenidoBase64,
         githubToken,
-        "Actualizar lista de documentos"
+        commitMessage
       );
 
     } catch (error) {
@@ -759,18 +762,35 @@ async eliminarArchivoGitHub(rutaArchivo, githubToken) {
   },
 
   // Cargar documentos iniciales
-  cargarDocumentosIniciales() {
-    const documentosIniciales = [
-      { nombre: "Mi Conexión Bancaribe - Personas", archivo: "Mi Conexión Bancaribe - Personas .pdf" },
-      { nombre: "SENIAT", archivo: "SENIAT.jpeg" },
-      { nombre: "RIF PDF", archivo: "rif.pdf" },
-      { nombre: "RIF PNG", archivo: "rif.png" },
-      { nombre: "Tarjeta Bancaribe Frente", archivo: "tarjeta bancaribe frente.jpeg" },
-      { nombre: "Tarjeta Bancaribe Dorso", archivo: "tarjeta bancaribe dorso.jpeg" },
-      { nombre: "Index HTML", archivo: "index.html" }
-    ];
+  async cargarDocumentosIniciales() {
+    try {
+      // Intentar cargar desde el archivo JSON
+      const response = await fetch('json/documentos.json');
+      if (response.ok) {
+        const documentosCargados = await response.json();
+        this.documentosList = documentosCargados;
+        this.renderizarDocumentos(documentosCargados);
+        console.log('Documentos cargados desde JSON:', documentosCargados);
+      } else {
+        // Si no existe, usar documentos por defecto
+        throw new Error('Archivo JSON no encontrado, usando documentos por defecto');
+      }
+    } catch (error) {
+      console.warn(error.message);
+      // Documentos por defecto - ahora con rutas relativas desde docs/
+      const documentosIniciales = [
+        { nombre: "Mi Conexión Bancaribe - Personas", archivo: "Mi Conexión Bancaribe - Personas .pdf" },
+        { nombre: "SENIAT", archivo: "SENIAT.jpeg" },
+        { nombre: "RIF PDF", archivo: "rif.pdf" },
+        { nombre: "RIF PNG", archivo: "rif.png" },
+        { nombre: "Tarjeta Bancaribe Frente", archivo: "tarjeta bancaribe frente.jpeg" },
+        { nombre: "Tarjeta Bancaribe Dorso", archivo: "tarjeta bancaribe dorso.jpeg" },
+        { nombre: "Index HTML", archivo: "index.html" }
+      ];
 
-    this.renderizarDocumentos(documentosIniciales);
+      this.documentosList = documentosIniciales;
+      this.renderizarDocumentos(documentosIniciales);
+    }
   },
 
   // Inicializar pestaña de documentos
@@ -782,6 +802,6 @@ async eliminarArchivoGitHub(rutaArchivo, githubToken) {
     }
     
     this.cargarDocumentosIniciales();
-    console.log('Pestaña "Documentos" inicializada con nuevo flujo de agregar documentos');
+    console.log('Pestaña "Documentos" inicializada con gestión CRUD completa');
   },
 };
