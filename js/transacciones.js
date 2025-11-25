@@ -295,7 +295,7 @@ async manejarEnvioFormulario(e) {
       let html = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Descripción</th><th class="text-end">Monto Bs</th><th class="text-end">Saldo Bs</th></tr></thead><tbody>`;
       this.listaTransacciones.slice(0,10).forEach(t => {
           t.monto = t.ingreso > 0 ? t.ingreso : -t.egreso;
-          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'} text-end">${this.formatoNumero.format(t.monto)}</td><td class="${t.saldo>0?'text-success':'text-danger text-end'}">${this.formatoNumero.format(t.saldo)}</td></tr>`;
+          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'} text-end">${this.formatoNumero.format(t.monto)}</td><td class="${t.saldo>0?'text-body':'text-danger text-end'}">${this.formatoNumero.format(t.saldo)}</td></tr>`;
       });
       html += `</tbody></table></div>`;
       this.container.innerHTML = html;
