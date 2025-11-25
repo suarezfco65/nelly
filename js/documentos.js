@@ -531,7 +531,7 @@ const documentos = {
       feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Eliminando documento de GitHub...</div>`;
 
       // Eliminar archivo físico de GitHub
-      await this.eliminarArchivoGitHub(archivo, this.tokenActual);
+      await this.hivoGitHub(archivo, this.tokenActual);
 
       // Eliminar la fila de la tabla
       rowElement.remove();
@@ -551,64 +551,32 @@ const documentos = {
   },
 
   // Nueva función para eliminar archivo físico de GitHub
-  async eliminarArchivoGitHub(rutaArchivo, githubToken) {
-    try {
-      // Construir la ruta completa en el repositorio
-      const rutaCompleta = `docs/${rutaArchivo}`;
-      
-      // Primero obtener el SHA del archivo actual
-      const config = CONFIG.GITHUB;
-      const getResponse = await fetch(
-        `${config.API_BASE}/contents/${rutaCompleta}`,
-        {
-          headers: {
-            Authorization: `Bearer ${githubToken}`,
-            Accept: "application/vnd.github.v3+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-        }
-      );
+async eliminarArchivoGitHub(rutaArchivo, githubToken) {
+  try {
+    // Construir la ruta completa en el repositorio
+    const rutaCompleta = `docs/${rutaArchivo}`;
+    
+    // Usar la función del módulo github
+    await github.eliminarArchivo(
+      rutaCompleta,
+      githubToken,
+      `Eliminar archivo: ${rutaArchivo}`
+    );
 
-      if (!getResponse.ok) {
-        // Si el archivo no existe, solo continuamos con la eliminación del registro
-        console.warn(`Archivo no encontrado en GitHub: ${rutaCompleta}`);
-        return;
-      }
-
-      const fileData = await getResponse.json();
-      const sha = fileData.sha;
-
-      // Eliminar el archivo de GitHub
-      const deleteResponse = await fetch(
-        `${config.API_BASE}/contents/${rutaCompleta}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${githubToken}`,
-            Accept: "application/vnd.github.v3+json",
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-          body: JSON.stringify({
-            message: `Eliminar archivo: ${rutaArchivo}`,
-            sha: sha,
-            branch: config.BRANCH,
-          }),
-        }
-      );
-
-      if (!deleteResponse.ok) {
-        const errorData = await deleteResponse.json();
-        throw new Error(`Error al eliminar archivo: ${errorData.message}`);
-      }
-
-      console.log(`Archivo eliminado de GitHub: ${rutaCompleta}`);
-      
-    } catch (error) {
-      console.error("Error en eliminarArchivoGitHub:", error);
-      throw error;
+    console.log(`Archivo eliminado de GitHub: ${rutaCompleta}`);
+    
+  } catch (error) {
+    console.error("Error en eliminarArchivoGitHub:", error);
+    
+    // Si el error es que el archivo no existe, continuamos igual
+    if (error.message.includes('no encontrado') || error.message.includes('not found')) {
+      console.warn(`Archivo no encontrado en GitHub: ${rutaArchivo}, continuando...`);
+      return;
     }
-  },
+    
+    throw error;
+  }
+},
 
   // Modificar la función de guardado para manejar eliminaciones pendientes
   async manejarGuardadoDocumentos() {
