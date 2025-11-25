@@ -3,7 +3,6 @@
 const datosBasicos = {
   // Datos actuales y estado
   datosCompletos: null, // Toda la data: { "datos-basicos": [...], "accesos": [...] }
-  tokenActual: null,
   isModifying: false,
 
   // --- Carga de Datos ---
@@ -363,34 +362,22 @@ const datosBasicos = {
 
   // --- Lógica del Token ---
   async solicitarTokenModificacion() {
-    const githubToken = prompt(
-      "Ingrese su Fine-Grained Token de GitHub para modificar los datos:"
-    );
-    if (!githubToken) return;
-
-    const feedback = document.getElementById("feedbackModificacionBasicos");
-
     try {
-      feedback.innerHTML = `<div class="alert alert-info py-2"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Verificando token...</div>`;
-      await github.verificarToken(githubToken);
-      this.tokenActual = githubToken;
-
-      // Activar modo modificación en ambas pestañas
+      const feedback = document.getElementById("feedbackModificacionBasicos");
+      feedback.innerHTML = `<div class="alert alert-info py-2">Verificando token...</div>`;
+      
+      // SOLO ESTA LÍNEA CAMBIA
+      await github.verificarToken(); // Sin parámetro, usará el token almacenado o pedirá uno
+      
       this.renderizarFormularioModificacion();
-      if (
-        typeof accesos !== "undefined" &&
-        accesos.renderizarFormularioModificacion
-      ) {
+      if (accesos.renderizarFormularioModificacion) {
         accesos.renderizarFormularioModificacion(this.datosCompletos.accesos);
       }
-
+      
       feedback.innerHTML = `<div class="alert alert-success py-2">Token verificado ✓</div>`;
-      setTimeout(() => {
-        feedback.innerHTML = "";
-      }, 1000);
     } catch (error) {
-      feedback.innerHTML = `<div class="alert alert-danger py-2">Error: ${error.message}</div>`;
-      this.tokenActual = null;
+      document.getElementById("feedbackModificacionBasicos").innerHTML = 
+        `<div class="alert alert-danger py-2">Error: ${error.message}</div>`;
     }
   },
 
@@ -521,10 +508,6 @@ const datosBasicos = {
     try {
       feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
 
-      if (!this.tokenActual) {
-        throw new Error("Token no disponible.");
-      }
-
       // 1. Obtener los datos modificados de ambas pestañas (si están en modo edición)
       const datosBasicosMod = this.obtenerDatosFormulario()["datos-basicos"];
       const accesosMod = accesos.isModifying
@@ -553,35 +536,23 @@ const datosBasicos = {
   },
 
   // Función para guardar en GitHub (Corregida con Base64)
-  async guardarEnGitHub(datosModificados, githubToken) {
+  async guardarEnGitHub(datosModificados) { 
     try {
       const claveAcceso = sessionStorage.getItem("claveAcceso");
-      if (!claveAcceso) {
-        throw new Error("No hay clave de acceso");
-      }
+      if (!claveAcceso) throw new Error("No hay clave de acceso");
 
-      const datosEncriptadosStr = await seguridad.encriptar(
-        datosModificados,
-        claveAcceso
-      );
-      // Base64 para la API de GitHub (doble codificación)
+      const datosEncriptadosStr = await seguridad.encriptar(datosModificados, claveAcceso);
       const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
 
-      const nombre =
-        datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
-          ?.valor || "Usuario";
-      const commitMessage = `Actualizar datos encriptados de ${nombre}`;
+      const nombre = datosModificados["datos-basicos"].find(d => d.campo === "Nombre")?.valor || "Usuario";
+      const commitMessage = `Actualizar datos de ${nombre}`;
 
-      await github.guardarArchivo(
-        CONFIG.DATOS_ENCRYPTED_PATH,
-        datosEncriptadosBase64ForAPI,
-        githubToken,
-        commitMessage
-      );
+      // SOLO ESTA LÍNEA CAMBIA - sin pasar token
+      await github.guardarArchivo(CONFIG.DATOS_ENCRYPTED_PATH, datosEncriptadosBase64ForAPI, commitMessage);
     } catch (error) {
-      console.error("Error en guardarEnGitHub:", error);
       throw error;
     }
+  }
   },
 
   inicializar() {
