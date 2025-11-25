@@ -275,55 +275,65 @@ const documentos = {
     }
   },
 
-  // Inicializar pestaña de documentos
+// Inicializar pestaña de documentos
   inicializar() {
     this.container = document.getElementById("docsContent");
     const uploadModalElement = document.getElementById("uploadDocModal");
 
-    if (!this.container || !uploadModalElement) {
-      console.error("No se encontró el contenedor docsContent o el modal uploadDocModal");
+    // CRÍTICO: Si no se encuentra el contenedor principal, salir.
+    if (!this.container) {
+      console.error("No se encontró el contenedor docsContent");
       return;
     }
     
-    this.uploadModalInstance = new bootstrap.Modal(uploadModalElement);
-    
-    // Evento para el botón de subida dentro del modal
-    document.getElementById("uploadDocBtn").addEventListener("click", async () => {
-        const fileInput = document.getElementById("docFileInput");
-        if (fileInput.files.length === 0) {
-            alert("Por favor, seleccione un archivo.");
-            return;
-        }
+    // CRÍTICO: SOLO inicializar y adjuntar eventos del modal si los elementos existen.
+    if (uploadModalElement) {
+        this.uploadModalInstance = new bootstrap.Modal(uploadModalElement);
         
-        const file = fileInput.files[0];
-        const fileName = file.name;
+        const uploadDocBtn = document.getElementById("uploadDocBtn");
         
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64Content = e.target.result.split(',')[1];
-            
-            const uploadBtn = document.getElementById("uploadDocBtn");
-            const originalText = uploadBtn.innerHTML;
-            
-            try {
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Subiendo...';
+        if (uploadDocBtn) {
+            // Evento para el botón de subida dentro del modal
+            uploadDocBtn.addEventListener("click", async () => {
+                const fileInput = document.getElementById("docFileInput");
+                if (fileInput.files.length === 0) {
+                    alert("Por favor, seleccione un archivo.");
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                const fileName = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const base64Content = e.target.result.split(',')[1];
+                    
+                    const uploadBtn = document.getElementById("uploadDocBtn");
+                    const originalText = uploadBtn.innerHTML;
+                    
+                    try {
+                        uploadBtn.disabled = true;
+                        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Subiendo...';
 
-                await this.subirDocumento(fileName, base64Content);
-                fileInput.value = ''; // Limpiar input
-            } catch (error) {
-            } finally {
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = originalText;
-            }
-        };
-        reader.onerror = (e) => {
-            alert("Error al leer el archivo: " + e.target.error.name);
-        };
-        reader.readAsDataURL(file);
-    });
+                        // 5. Llamada a la función de subida
+                        await this.subirDocumento(fileName, base64Content);
+                        fileInput.value = ''; // Limpiar input
+                    } catch (error) {
+                    } finally {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = originalText;
+                    }
+                };
+                reader.onerror = (e) => {
+                    alert("Error al leer el archivo: " + e.target.error.name);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    } else {
+        console.warn("No se encontró el modal de subida de documentos (#uploadDocModal). Las funciones de subir no funcionarán.");
+    }
     
-    // Cargar la lista inicial de documentos
+    // Cargar la lista inicial de documentos - ESTO DEBE EJECUTARSE SIEMPRE
     this.cargarDocumentosDesdeGithub();
-  },
-};
+  },};
