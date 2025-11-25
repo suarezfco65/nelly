@@ -75,11 +75,13 @@ const transacciones = {
     }
   },
 
-  renderizarUI() {
-    // Cálculo de saldo total
-    const saldoTotal = this.listaTransacciones.reduce((acc, t) => {
-        return t.tipo === 'ingreso' ? acc + t.monto : acc - t.monto;
-    }, 0);
+renderizarUI() {
+    // 1. Obtener el saldo actual
+    // En tu JSON, el registro 0 es el más reciente, por lo que tomamos ese saldo.
+    let saldoTotal = 0;
+    if (this.listaTransacciones.length > 0) {
+        saldoTotal = this.listaTransacciones[0].saldo;
+    }
 
     const ultimas = this.listaTransacciones.slice(0, 10); // Mostrar solo las últimas 10
 
@@ -88,7 +90,7 @@ const transacciones = {
             <div class="col-md-4">
                 <div class="card bg-light border-primary">
                     <div class="card-body text-center py-2">
-                        <small class="text-muted">Saldo Total</small>
+                        <small class="text-muted">Saldo Actual</small>
                         <h4 class="${saldoTotal >= 0 ? 'text-success' : 'text-danger'}">Bs ${this.formatoNumero.format(saldoTotal)}</h4>
                         ${this.ultimaTasa ? `<small class="text-muted">≈ $${this.formatoNumero.format(saldoTotal / this.ultimaTasa)}</small>` : ''}
                     </div>
@@ -111,14 +113,27 @@ const transacciones = {
         html += `<tr><td colspan="4" class="text-center">No hay transacciones.</td></tr>`;
     } else {
         ultimas.forEach(t => {
-            const esIngreso = t.tipo === 'ingreso';
-            const dolares = this.convertirBsADolares(t.monto, t.fecha);
+            // CORRECCIÓN: Detectar monto y tipo basados en tu estructura JSON
+            let montoReal = 0;
+            let esIngreso = false;
+
+            // Tu JSON usa "ingreso" y "egreso" numéricos
+            if (t.ingreso > 0) {
+                montoReal = t.ingreso;
+                esIngreso = true;
+            } else {
+                montoReal = t.egreso;
+                esIngreso = false;
+            }
+
+            const dolares = this.convertirBsADolares(montoReal, t.fecha);
+            
             html += `
                 <tr>
                     <td>${t.fecha}</td>
                     <td>${t.descripcion}</td>
                     <td class="text-end ${esIngreso ? 'text-success' : 'text-danger'}">
-                        ${esIngreso ? '+' : '-'} ${this.formatoNumero.format(t.monto)}
+                        ${esIngreso ? '+' : '-'} ${this.formatoNumero.format(montoReal)}
                     </td>
                     <td class="text-end text-muted small">
                         ${dolares ? '$' + this.formatoNumero.format(dolares) : '-'}
