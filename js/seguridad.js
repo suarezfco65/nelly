@@ -111,6 +111,7 @@ const seguridad = {
       return false;
     }
   },
+};
   // Agregar al final de seguridad.js
 seguridad.gestionarTokens = {
   guardarToken: function(token) {
