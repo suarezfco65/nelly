@@ -81,6 +81,10 @@ const datosBasicos = {
 
   // --- Migración de Estructura Antigua a Nueva ---
   migrarEstructura(datosLegacy) {
+      // Validar datosLegacy
+  if (!datosLegacy) {
+    datosLegacy = {};
+  }
     // Intenta extraer los datos del formato antiguo y convertirlos al nuevo
     const preguntas = datosLegacy.preguntasSeguridad || [];
     const accesosAntiguos = datosLegacy.accesos || {};
@@ -331,7 +335,7 @@ const datosBasicos = {
     document
       .getElementById("formModificarDatosBasicos")
       .addEventListener("submit", (e) => {
-        this.manejarModificacion(e);
+        this.ficacion(e);
       });
     document
       .getElementById("btnCancelarModificacionBasicos")
@@ -506,41 +510,40 @@ const datosBasicos = {
     return { "datos-basicos": nuevosDatosBasicos };
   },
 
-  async manejarModificacion(event) {
-    event.preventDefault();
+async manejarModificacion(event) {
+  event.preventDefault();
 
-    const feedback = document.getElementById("feedbackModificacionBasicos");
+  const feedback = document.getElementById("feedbackModificacionBasicos");
 
-    try {
-      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
+  try {
+    feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
 
-      // 1. Obtener los datos modificados de ambas pestañas (si están en modo edición)
-      const datosBasicosMod = this.obtenerDatosFormulario()["datos-basicos"];
-      const accesosMod = accesos.isModifying
-        ? accesos.obtenerDatosFormulario().accesos
-        : this.datosCompletos.accesos;
+    // 1. Obtener los datos modificados de ambas pestañas
+    const datosBasicosMod = this.obtenerDatosFormulario()["datos-basicos"];
+    const accesosMod = accesos.isModifying
+      ? accesos.obtenerDatosFormulario().accesos
+      : this.datosCompletos.accesos;
 
-      const datosFinales = {
-        "datos-basicos": datosBasicosMod,
-        accesos: accesosMod,
-      };
+    const datosFinales = {
+      "datos-basicos": datosBasicosMod,
+      accesos: accesosMod,
+    };
 
-      // 2. Guardar en GitHub
-      await this.GitHub(datosFinales);
+    // 2. Guardar en GitHub (CORREGIDO)
+    await this.guardarEnGitHub(datosFinales); // ← ESTA ES LA CORRECCIÓN PRINCIPAL
 
-      feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
+    feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
 
-      // 3. Actualizar datos locales y recargar
-      this.datosCompletos = datosFinales;
-      setTimeout(() => {
-        location.reload();
-      }, 2000);
-    } catch (error) {
-      console.error("Error modificando datos:", error);
-      feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
-    }
-  },
-
+    // 3. Actualizar datos locales y recargar
+    this.datosCompletos = datosFinales;
+    setTimeout(() => {
+      location.reload();
+    }, 2000);
+  } catch (error) {
+    console.error("Error modificando datos:", error);
+    feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
+  }
+},
   // Función para guardar en GitHub (Corregida con Base64)
 async guardarEnGitHub(datosModificados) {
   try {
