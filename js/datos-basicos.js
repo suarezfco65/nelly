@@ -526,7 +526,7 @@ const datosBasicos = {
       };
 
       // 2. Guardar en GitHub
-      await this.guardarEnGitHub(datosFinales);
+      await this.GitHub(datosFinales);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
 
@@ -542,35 +542,46 @@ const datosBasicos = {
   },
 
   // Función para guardar en GitHub (Corregida con Base64)
-  async guardarEnGitHub(datosModificados) {
-    try {
-      const claveAcceso = sessionStorage.getItem("claveAcceso");
-      if (!claveAcceso) {
-        throw new Error("No hay clave de acceso");
-      }
-
-      const datosEncriptadosStr = await seguridad.encriptar(
-        datosModificados,
-        claveAcceso
-      );
-      // Base64 para la API de GitHub (doble codificación)
-      const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
-
-      const nombre =
-        datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
-          ?.valor || "Usuario";
-      const commitMessage = `Actualizar datos encriptados de ${nombre}`;
-
-      await github.guardarArchivo(
-        CONFIG.DATOS_ENCRYPTED_PATH,
-        datosEncriptadosBase64ForAPI,
-        commitMessage
-      );
-    } catch (error) {
-      console.error("Error en guardarEnGitHub:", error);
-      throw error;
+async guardarEnGitHub(datosModificados) {
+  try {
+    const claveAcceso = sessionStorage.getItem("claveAcceso");
+    if (!claveAcceso) {
+      throw new Error("No hay clave de acceso");
     }
-  },
+
+    const datosEncriptadosStr = await seguridad.encriptar(
+      datosModificados,
+      claveAcceso
+    );
+    // Base64 para la API de GitHub (doble codificación)
+    const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
+
+    const nombre =
+      datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
+        ?.valor || "Usuario";
+    const commitMessage = `Actualizar datos encriptados de ${nombre}`;
+
+    // NUEVO: Intentar obtener SHA del archivo existente
+    let sha = null;
+    try {
+      const existingFile = await github._fetchProxy('getFile', CONFIG.DATOS_ENCRYPTED_PATH, {}, false);
+      sha = existingFile.sha;
+      console.log('✅ SHA del archivo existente:', sha);
+    } catch (error) {
+      console.log('📄 Archivo encriptado no existe, se creará nuevo');
+    }
+
+    await github.guardarArchivo(
+      CONFIG.DATOS_ENCRYPTED_PATH,
+      datosEncriptadosBase64ForAPI,
+      commitMessage,
+      sha // NUEVO: Pasar el SHA si existe
+    );
+  } catch (error) {
+    console.error("Error en guardarEnGitHub:", error);
+    throw error;
+  }
+},
 
   inicializar() {
     this.cargarDatos();
