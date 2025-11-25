@@ -52,7 +52,22 @@ export default async function handler(request) {
           }
         );
         break;
-
+     case "listDir":
+        // filePath será 'docs'. Se usa el parámetro 'data' para pasar el branch
+        const branch = data?.branch || 'main';
+        response = await fetch(
+          `${GITHUB_API_BASE}/contents/${filePath}?ref=${branch}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${githubToken}`,
+              Accept: "application/vnd.github.v3+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "Nelly-App",
+            },
+          }
+        );
+        break;
       case "updateFile":
         // Se usa la variable filePath para generalizar el endpoint
         response = await fetch(
