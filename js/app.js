@@ -36,10 +36,10 @@ const state = {
 
 // Función para inicializar eventos globales
 function inicializarEventosGlobales() {
-  // Evento para el botón de salir (logout)
   if (elements.logoutBtn) {
     elements.logoutBtn.addEventListener("click", () => {
       sessionStorage.removeItem("claveAcceso");
+      seguridad.gestionarTokens.eliminarToken(); // ← NUEVA LÍNEA
       window.location.href = CONFIG.LOGIN_URL;
     });
   }
