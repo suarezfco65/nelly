@@ -111,14 +111,12 @@ const documentos = {
     `;
     
     // Adjuntar evento al nuevo botón "Mostrar Documentos"
-    setTimeout(() => {
-        const mostrarDocsBtn = document.getElementById('mostrarDocsBtn');
+    const mostrarDocsBtn = document.getElementById('mostrarDocsBtn');
     if (mostrarDocsBtn) {
         mostrarDocsBtn.addEventListener('click', () => this.cargarDocumentosDesdeGithub());
     }    
     // Renderizar el botón de subir
     this.renderizarBotonSubir();
-}, 1000);
     
   },
   
