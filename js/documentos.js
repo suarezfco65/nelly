@@ -517,38 +517,53 @@ const documentos = {
   },
 
   // Eliminar documento (modificada)
-  async eliminarDocumento(rowElement) {
-    const nombre = rowElement.querySelector('.input-nombre').value;
-    const archivo = rowElement.querySelector('.input-archivo').value;
+async eliminarDocumento(rowElement) {
+  const nombre = rowElement.querySelector('.input-nombre').value;
+  const archivo = rowElement.querySelector('.input-archivo').value;
+  
+  const confirmacion = confirm(
+    `¿ESTÁ SEGURO DE ELIMINAR ESTE DOCUMENTO?\n\n` +
+    `Documento: ${nombre}\n` +
+    `Archivo: ${archivo}\n\n` +
+    `Esta acción:\n` +
+    `• Eliminará el registro de la lista\n` +
+    `• Eliminará el archivo físico de GitHub\n` +
+    `• No se puede deshacer`
+  );
+  
+  if (!confirmacion) return;
+
+  try {
+    const feedback = document.getElementById("feedbackDocumentos");
+    feedback.innerHTML = `<div class="alert alert-warning">
+      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+      Eliminando documento "${nombre}" de GitHub...
+    </div>`;
+
+    // Eliminar archivo físico de GitHub
+    await this.eliminarArchivoGitHub(archivo, this.tokenActual);
+
+    // Eliminar la fila de la tabla
+    rowElement.remove();
+
+    feedback.innerHTML = `<div class="alert alert-success">
+      <strong>✓ Documento eliminado exitosamente</strong><br>
+      <small>El archivo "${archivo}" ha sido eliminado de GitHub</small>
+    </div>`;
     
-    const confirmacion = confirm(`¿Está seguro de eliminar el documento "${nombre}"?\n\nEsta acción eliminará tanto el registro como el archivo físico de GitHub.`);
-    
-    if (!confirmacion) return;
+    setTimeout(() => {
+      feedback.innerHTML = '';
+    }, 5000);
 
-    try {
-      // Mostrar feedback de eliminación
-      const feedback = document.getElementById("feedbackDocumentos");
-      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Eliminando documento de GitHub...</div>`;
-
-      // Eliminar archivo físico de GitHub
-      await this.hivoGitHub(archivo, this.tokenActual);
-
-      // Eliminar la fila de la tabla
-      rowElement.remove();
-
-      feedback.innerHTML = `<div class="alert alert-success">Documento eliminado exitosamente</div>`;
-      
-      // Limpiar feedback después de 3 segundos
-      setTimeout(() => {
-        feedback.innerHTML = '';
-      }, 3000);
-
-    } catch (error) {
-      console.error('Error eliminando documento:', error);
-      const feedback = document.getElementById("feedbackDocumentos");
-      feedback.innerHTML = `<div class="alert alert-danger">Error al eliminar documento: ${error.message}</div>`;
-    }
-  },
+  } catch (error) {
+    console.error('Error eliminando documento:', error);
+    const feedback = document.getElementById("feedbackDocumentos");
+    feedback.innerHTML = `<div class="alert alert-danger">
+      <strong>Error al eliminar documento</strong><br>
+      <small>${error.message}</small>
+    </div>`;
+  }
+},
 
   // Nueva función para eliminar archivo físico de GitHub
 async eliminarArchivoGitHub(rutaArchivo, githubToken) {
