@@ -4,7 +4,6 @@ const CONFIG = {
   LOGIN_URL: "login.html",
   DATOS_ENCRYPTED_PATH: "json/datos-basicos-encriptado.json",
   TRANSACCIONES_PATH: "json/transacciones.json",
-  DOCUMENTOS_PATH: "json/documentos.json", // NUEVA: Ruta para documentos
 
   // Configuración centralizada de GitHub
   GITHUB: {
