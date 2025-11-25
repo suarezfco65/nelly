@@ -362,22 +362,28 @@ const datosBasicos = {
 
   // --- Lógica del Token ---
   async solicitarTokenModificacion() {
+    const feedback = document.getElementById("feedbackModificacionBasicos");
+
     try {
-      const feedback = document.getElementById("feedbackModificacionBasicos");
-      feedback.innerHTML = `<div class="alert alert-info py-2">Verificando token...</div>`;
+      feedback.innerHTML = `<div class="alert alert-info py-2"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Verificando token...</div>`;
       
-      // SOLO ESTA LÍNEA CAMBIA
-      await github.verificarToken(); // Sin parámetro, usará el token almacenado o pedirá uno
-      
+      await github.verificarToken();
+
+      // Activar modo modificación en ambas pestañas
       this.renderizarFormularioModificacion();
-      if (accesos.renderizarFormularioModificacion) {
+      if (
+        typeof accesos !== "undefined" &&
+        accesos.renderizarFormularioModificacion
+      ) {
         accesos.renderizarFormularioModificacion(this.datosCompletos.accesos);
       }
-      
+
       feedback.innerHTML = `<div class="alert alert-success py-2">Token verificado ✓</div>`;
+      setTimeout(() => {
+        feedback.innerHTML = "";
+      }, 1000);
     } catch (error) {
-      document.getElementById("feedbackModificacionBasicos").innerHTML = 
-        `<div class="alert alert-danger py-2">Error: ${error.message}</div>`;
+      feedback.innerHTML = `<div class="alert alert-danger py-2">Error: ${error.message}</div>`;
     }
   },
 
@@ -520,7 +526,7 @@ const datosBasicos = {
       };
 
       // 2. Guardar en GitHub
-      await this.guardarEnGitHub(datosFinales, this.tokenActual);
+      await this.guardarEnGitHub(datosFinales);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
 
@@ -536,23 +542,34 @@ const datosBasicos = {
   },
 
   // Función para guardar en GitHub (Corregida con Base64)
-  async guardarEnGitHub(datosModificados) { 
+  async guardarEnGitHub(datosModificados) {
     try {
       const claveAcceso = sessionStorage.getItem("claveAcceso");
-      if (!claveAcceso) throw new Error("No hay clave de acceso");
+      if (!claveAcceso) {
+        throw new Error("No hay clave de acceso");
+      }
 
-      const datosEncriptadosStr = await seguridad.encriptar(datosModificados, claveAcceso);
+      const datosEncriptadosStr = await seguridad.encriptar(
+        datosModificados,
+        claveAcceso
+      );
+      // Base64 para la API de GitHub (doble codificación)
       const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
 
-      const nombre = datosModificados["datos-basicos"].find(d => d.campo === "Nombre")?.valor || "Usuario";
-      const commitMessage = `Actualizar datos de ${nombre}`;
+      const nombre =
+        datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
+          ?.valor || "Usuario";
+      const commitMessage = `Actualizar datos encriptados de ${nombre}`;
 
-      // SOLO ESTA LÍNEA CAMBIA - sin pasar token
-      await github.guardarArchivo(CONFIG.DATOS_ENCRYPTED_PATH, datosEncriptadosBase64ForAPI, commitMessage);
+      await github.guardarArchivo(
+        CONFIG.DATOS_ENCRYPTED_PATH,
+        datosEncriptadosBase64ForAPI,
+        commitMessage
+      );
     } catch (error) {
+      console.error("Error en guardarEnGitHub:", error);
       throw error;
     }
-  }
   },
 
   inicializar() {
