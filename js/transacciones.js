@@ -146,7 +146,7 @@ renderizarUI() {
     this.container.innerHTML = html;
     this.actualizarBotonToken();
   },
-
+*/
   // --- Lógica del Formulario ---
   toggleFormulario() {
       const form = document.getElementById('formTransaccion');
@@ -159,7 +159,7 @@ renderizarUI() {
           btn.style.display = 'block';
       }
   },
-*/
+
 async manejarEnvioFormulario(e) {
     e.preventDefault();
     const feedback = document.getElementById('feedbackTransaccion');
@@ -225,7 +225,7 @@ async manejarEnvioFormulario(e) {
       html += `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Desc</th><th>Monto</th></tr></thead><tbody>`;
       this.listaTransacciones.slice(0,10).forEach(t => {
           t.monto = t.ingreso > 0 ? t.ingreso : -t.egreso;
-          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'}">${t.monto}</td></tr>`;
+          html += `<tr><td>${t.fecha}</td><td>${t.descripcion}</td><td class="${t.ingreso > 0 ? 'text-success' : 'text-danger'}">${this.formatoNumero.format(t.monto)}</td></tr>`;
       });
       html += `</tbody></table></div>`;
       this.container.innerHTML = html;
