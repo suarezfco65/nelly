@@ -6,34 +6,6 @@ const documentos = {
   container: null,
   uploadModalInstance: null,
 
-  /**
-   * Helper unificado para solicitar y validar el token
-   */
-  async solicitarToken(promptMessage, requiredPermissions = "read") {
-    if (this.tokenActual) {
-      return this.tokenActual;
-    }
-
-    const token = prompt(
-      promptMessage ||
-        "Por favor, ingrese su Token de Acceso Personal (GitHub PAT):"
-    );
-    if (!token) throw new Error("Operación cancelada: Token no proporcionado.");
-
-    try {
-      await github.verificarToken(token);
-      this.tokenActual = token;
-      sessionStorage.setItem("githubToken", token);
-      return token;
-    } catch (error) {
-      alert(
-        `Token inválido o sin los permisos requeridos (${requiredPermissions}): ` +
-          error.message
-      );
-      throw new Error("Token inválido.");
-    }
-  },
-
   // Función para determinar el tipo de archivo
   obtenerTipoArchivo(nombreArchivo) {
     const extension = nombreArchivo.split(".").pop().toLowerCase();
@@ -125,32 +97,26 @@ const documentos = {
 
   // Cargar documentos desde la carpeta 'docs' en GitHub
   async cargarDocumentosDesdeGithub() {
-    const listContainer = document.getElementById("documentosListContainer");
-    const initialMessage = document.getElementById("docsInitialMessage");
-    if (!listContainer || !initialMessage) return;
-
-    listContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Solicitando token y cargando documentos...</p></div>`;
-
+    const listContainer = document.getElementById('documentosListContainer');
+    const initialMessage = document.getElementById('docsInitialMessage');
+    
+    listContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando documentos...</p></div>`;
+    
     try {
-      const token = await this.solicitarToken(
-        "Para VISUALIZAR los documentos, ingrese su Token (contents:read):",
-        "read"
-      );
+        // SOLO ESTA LÍNEA CAMBIA - usar github.obtenerToken()
+        const token = github.obtenerToken(true, "visualizar documentos");
+        if (!token) return;
+        
+        const contenidos = await github.obtenerContenidoDeDirectorio('docs');
+        this.documentosList = contenidos;
+        
+        initialMessage.style.display = 'none';
+        this.renderizarDocumentos(contenidos);
 
-      const contenidos = await github.obtenerContenidoDeDirectorio(
-        token,
-        "docs"
-      );
-      this.documentosList = contenidos;
-
-      initialMessage.style.display = "none";
-      this.renderizarDocumentos(contenidos);
-
-      console.log("Documentos cargados desde GitHub:", contenidos.length);
     } catch (error) {
-      console.error("Error cargando documentos desde GitHub:", error);
-      listContainer.innerHTML = `<div class="alert alert-danger">Error al cargar la lista de documentos: ${error.message}. Intente nuevamente.</div>`;
-      initialMessage.style.display = "block";
+      console.error('Error cargando documentos:', error);
+      listContainer.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+      initialMessage.style.display = 'block';
     }
   },
 
@@ -205,10 +171,6 @@ const documentos = {
     }
 
     try {
-      const token = await this.solicitarToken(
-        "Para ELIMINAR, ingrese su Token (contents:write):",
-        "write"
-      );
 
       await github.eliminarArchivoDeGitHub(
         token,
@@ -232,32 +194,14 @@ const documentos = {
 
   // Subir el documento
   async subirDocumento(fileName, fileContentBase64) {
-    if (!fileName || !fileContentBase64) {
-      throw new Error("Faltan datos para la subida.");
-    }
-
     try {
-      const token = await this.solicitarToken(
-        "Para SUBIR, ingrese su Token (contents:write):",
-        "write"
-      );
-
       const filePath = `docs/${fileName}`;
-      const commitMessage = `Subir nuevo documento: ${fileName}`;
-
-      await github.subirArchivoAGitHub(
-        token,
-        filePath,
-        fileContentBase64,
-        commitMessage
-      );
-
+      await github.subirArchivoAGitHub(filePath, fileContentBase64, `Subir: ${fileName}`);
       alert(`Documento ${fileName} subido con éxito.`);
       this.uploadModalInstance.hide();
       await this.cargarDocumentosDesdeGithub();
     } catch (error) {
-      console.error("Error al subir documento:", error);
-      alert("No se pudo subir el documento: " + error.message);
+      alert("Error al subir: " + error.message);
     }
   },
 
