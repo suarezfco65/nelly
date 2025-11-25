@@ -3,7 +3,6 @@ const transacciones = {
   GITHUB_CONFIG: CONFIG.GITHUB,
 
   // Estado de la aplicación
-  tokenActual: null,
   transaccionesPendientes: [],
   tasasDolar: [], // Array de todas las tasas
   ultimaTasa: null,
@@ -352,15 +351,9 @@ mostrarTransacciones(transacciones) {
   },
 
   // Función para solicitar token inicial
-  async solicitarTokenInicial() {
-    const githubToken = prompt('Ingrese su Fine-Grained Token de GitHub para agregar transacciones:');
-    if (!githubToken) {
-      return;
-    }
-    
-    const feedback = document.getElementById('transaccionesContent');
-    
+  async solicitarTokenInicial() {    
     try {
+      await github.verificarToken(); // Esto pedirá el token si no existe
       // Mostrar mensaje de verificación
       const contenidoOriginal = feedback.innerHTML;
       feedback.innerHTML = `
@@ -377,10 +370,7 @@ mostrarTransacciones(transacciones) {
       if (!tokenValido) {
         throw new Error('Token inválido o sin permisos suficientes');
       }
-      
-      // Guardar token
-      this.tokenActual = githubToken;
-      
+            
       // Restaurar contenido y mostrar formulario
       this.mostrarTransacciones((await fetch('json/transacciones.json').then(r => r.json())).transacciones);
       
