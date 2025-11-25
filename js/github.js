@@ -175,6 +175,58 @@ const github = {
 
     return await deleteResponse.json();
   },
+
+  /**
+   * Obtiene la lista de contenidos (archivos) de un directorio en GitHub.
+   * Requiere un token para acceder al repositorio.
+   * @param {string} githubToken - El token de GitHub con permisos de lectura.
+   * @param {string} dirPath - Ruta del directorio (generalmente 'docs').
+   * @returns {Promise<Array<Object>>} Una lista de objetos de contenido de GitHub (solo archivos).
+   */
+  async obtenerContenidoDeDirectorio(githubToken, dirPath = 'docs') {
+    const config = CONFIG.GITHUB;
+    const tokenLimpio = githubToken.trim();
+    const pathLimpio = dirPath.startsWith('/') ? dirPath.substring(1) : dirPath;
+
+    const url = `${config.API_BASE}/contents/${pathLimpio}?ref=${config.BRANCH}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tokenLimpio}`,
+          Accept: "application/vnd.github.v3+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+             return [];
+        }
+        const errorData = await response.json();
+        throw new Error(
+          `Error al obtener contenido de GitHub (${dirPath}): ${response.status} - ${errorData.message}`
+        );
+      }
+
+      const contents = await response.json();
+      
+      // Filtrar solo archivos y mapear para obtener el nombre, ruta completa y SHA
+      return contents
+        .filter(item => item.type === 'file')
+        .map(item => ({
+            nombre: item.name, 
+            archivo: item.path, // ej: 'docs/archivo.ext'
+            sha: item.sha // Necesario para la eliminación
+        }));
+
+    } catch (error) {
+      console.error(`Error en obtenerContenidoDeDirectorio para ${dirPath}:`, error);
+      throw error; 
+    }
+  },
+// ... (resto de funciones de github.js)
   
 };
 
