@@ -2,7 +2,25 @@
 const github = {
   PROXY_URL: CONFIG.PROXY_URL,
 
-  async _fetchProxy(githubToken, action, filePath, data = {}) {
+    // NUEVO: Función centralizada para obtener token
+  obtenerToken: function(solicitarSiFalta = true, proposito = "esta operación") {
+    let token = seguridad.gestionarTokens.obtenerToken();
+    
+    if (!token && solicitarSiFalta) {
+      token = prompt(`Para ${proposito}, ingrese su Token de GitHub:`);
+      if (token) {
+        seguridad.gestionarTokens.guardarToken(token);
+      }
+    }
+    
+    return token;
+  },
+
+  async _fetchProxy(action, filePath, data = {}, solicitarToken = true) {
+    const token = this.obtenerToken(solicitarToken, `ejecutar ${action}`);
+    if (!token) {
+      throw new Error("Token de GitHub no proporcionado");
+    }
     // Si estamos en GitHub Pages, usar GitHub API directamente
     if (window.location.hostname.includes('github.io')) {
       console.warn('⚠️  Modo GitHub Pages: usando GitHub API directamente');
@@ -12,7 +30,7 @@ const github = {
     // Intentar usar proxy para otros entornos
     try {
       const bodyPayload = {
-        githubToken: githubToken.trim(),
+        githubToken: token.trim(),
         action: action,
         filePath: filePath,
         data: {
@@ -104,8 +122,8 @@ const github = {
     return await response.json();
   },
 
-  // El resto de las funciones permanecen igual
-  async verificarToken(githubToken) {
+  async verificarToken(token = null) {
+    const tokenUsar = token || this.obtenerToken(true, "verificar permisos");
     const config = CONFIG.GITHUB;
     const tokenLimpio = githubToken.trim();
 
@@ -126,8 +144,8 @@ const github = {
     }
   },
 
-  async obtenerContenidoDeDirectorio(githubToken, dirPath = 'docs') {
-    const contents = await this._fetchProxy(githubToken, 'listDir', dirPath);
+  async obtenerContenidoDeDirectorio(dirPath = 'docs') {
+    const contents = await this._fetchProxy('listDir', dirPath, {}, true);
     
     return contents
       .filter(item => item.type === 'file')
@@ -138,14 +156,13 @@ const github = {
       }));
   },
 
-  async guardarArchivo(filePath, content, githubToken, commitMessage) {
+  async guardarArchivo(filePath, content, commitMessage) {
     const payload = {
       message: commitMessage,
       content: content,
       branch: CONFIG.GITHUB.BRANCH,
     };
-    
-    return await this._fetchProxy(githubToken, 'updateFile', filePath, payload);
+    return await this._fetchProxy('updateFile', filePath, payload, true);
   },
 
   async eliminarArchivoDeGitHub(filePath, githubToken, commitMessage, sha) {
