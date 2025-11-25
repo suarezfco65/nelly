@@ -69,78 +69,110 @@ const github = {
   },
 
   // Función para llamar a GitHub API directamente (sin proxy)
-  async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
-    const GITHUB_API_BASE = "https://api.github.com/repos/suarezfco65/nelly";
-    let url;
-    let options = {
-      headers: {
-        "Authorization": `Bearer ${githubToken}`,
-        "Accept": "application/vnd.github.v3+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "Nelly-App"
+async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
+  const GITHUB_API_BASE = "https://api.github.com/repos/suarezfco65/nelly";
+  let url;
+  let options = {
+    headers: {
+      "Authorization": `Bearer ${githubToken}`,
+      "Accept": "application/vnd.github.v3+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "Nelly-App"
+    }
+  };
+
+  switch (action) {
+    case "getFile":
+      if (!filePath) {
+        throw new Error("filePath requerido para getFile");
       }
-    };
+      url = `${GITHUB_API_BASE}/contents/${filePath}`;
+      options.method = "GET";
+      break;
 
-    switch (action) {
-      case "getFile":
-        if (!filePath) {
-          throw new Error("filePath requerido para getFile");
+    case "listDir":
+      if (!filePath) {
+        throw new Error("filePath requerido para listDir");
+      }
+      const branch = data.branch || "main";
+      url = `${GITHUB_API_BASE}/contents/${filePath}?ref=${branch}`;
+      options.method = "GET";
+      break;
+
+    case "updateFile":
+      if (!filePath) {
+        throw new Error("filePath requerido para updateFile");
+      }
+      url = `${GITHUB_API_BASE}/contents/${filePath}`;
+      options.method = "PUT";
+      options.headers["Content-Type"] = "application/json";
+      
+      // NUEVO: Obtener SHA del archivo existente antes de actualizar
+      if (!data.sha) {
+        try {
+          const existingFile = await this._fetchGitHubDirectly(githubToken, 'getFile', filePath, {});
+          data.sha = existingFile.sha;
+          console.log('✅ SHA obtenido:', data.sha);
+        } catch (error) {
+          // Si el archivo no existe, no hay SHA (se creará nuevo archivo)
+          if (!error.message.includes('404')) {
+            throw error;
+          }
+          console.log('📄 Archivo no existe, se creará nuevo');
         }
-        url = `${GITHUB_API_BASE}/contents/${filePath}`;
-        options.method = "GET";
-        break;
+      }
+      
+      options.body = JSON.stringify(data);
+      break;
 
-      case "listDir":
-        if (!filePath) {
-          throw new Error("filePath requerido para listDir");
+    case "deleteFile":
+      if (!filePath) {
+        throw new Error("filePath requerido para deleteFile");
+      }
+      url = `${GITHUB_API_BASE}/contents/${filePath}`;
+      options.method = "DELETE";
+      options.headers["Content-Type"] = "application/json";
+      
+      // NUEVO: Obtener SHA antes de eliminar
+      if (!data.sha) {
+        try {
+          const existingFile = await this._fetchGitHubDirectly(githubToken, 'getFile', filePath, {});
+          data.sha = existingFile.sha;
+        } catch (error) {
+          // Si el archivo no existe, considerar eliminación como exitosa
+          if (error.message.includes('404')) {
+            console.warn('📄 Archivo no encontrado, eliminación innecesaria');
+            return { status: 'skipped', message: 'Archivo no encontrado' };
+          }
+          throw error;
         }
-        const branch = data.branch || "main";
-        url = `${GITHUB_API_BASE}/contents/${filePath}?ref=${branch}`;
-        options.method = "GET";
-        break;
+      }
+      
+      options.body = JSON.stringify(data);
+      break;
 
-      case "updateFile":
-        if (!filePath) {
-          throw new Error("filePath requerido para updateFile");
-        }
-        url = `${GITHUB_API_BASE}/contents/${filePath}`;
-        options.method = "PUT";
-        options.headers["Content-Type"] = "application/json";
-        options.body = JSON.stringify(data);
-        break;
+    case "testRepo":
+      url = GITHUB_API_BASE;
+      options.method = "GET";
+      break;
 
-      case "deleteFile":
-        if (!filePath) {
-          throw new Error("filePath requerido para deleteFile");
-        }
-        url = `${GITHUB_API_BASE}/contents/${filePath}`;
-        options.method = "DELETE";
-        options.headers["Content-Type"] = "application/json";
-        options.body = JSON.stringify(data);
-        break;
+    default:
+      throw new Error("Acción no válida: " + action);
+  }
 
-      case "testRepo":
-        url = GITHUB_API_BASE;
-        options.method = "GET";
-        break;
+  console.log(`🔗 GitHub API Directa: ${action} -> ${url}`);
+  
+  const response = await fetch(url, options);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    const errorMessage = `GitHub API Error: ${response.status} - ${errorData.message}`;
+    console.error(errorMessage, errorData);
+    throw new Error(errorMessage);
+  }
 
-      default:
-        throw new Error("Acción no válida: " + action);
-    }
-
-    console.log(`🔗 GitHub API Directa: ${action} -> ${url}`);
-    
-    const response = await fetch(url, options);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = `GitHub API Error: ${response.status} - ${errorData.message}`;
-      console.error(errorMessage, errorData);
-      throw new Error(errorMessage);
-    }
-
-    return await response.json();
-  },
+  return await response.json();
+},
 
   // Función para verificar token
   async verificarToken(token = null) {
