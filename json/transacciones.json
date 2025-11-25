@@ -1,74 +1,92 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-11-25",
+      "descripcion": "Prueba",
+      "ingreso": 1000,
+      "egreso": 0,
+      "saldo": 3540,
+      "timestamp": 1764094883918
+    },
+    {
       "fecha": "2025-11-23",
       "descripcion": "Pago a Rosneify Rendon",
       "ingreso": 0,
       "egreso": 3650,
-      "saldo": 2540
+      "saldo": 2540,
+      "monto": -3650
     },
     {
       "fecha": "2025-11-20",
       "descripcion": "Compra farmatodo",
       "ingreso": 0,
       "egreso": 30400,
-      "saldo": 6190
+      "saldo": 6190,
+      "monto": -30400
     },
     {
       "fecha": "2025-11-17",
       "descripcion": "Ingreso Mercantil",
       "ingreso": 20700,
       "egreso": 0,
-      "saldo": 38590
+      "saldo": 38590,
+      "monto": 20700
     },
     {
       "fecha": "2025-11-17",
       "descripcion": "Envio dinero Ana Maria",
       "ingreso": 0,
       "egreso": 2160,
-      "saldo": 17890
+      "saldo": 17890,
+      "monto": -2160
     },
     {
       "fecha": "2025-11-17",
       "descripcion": "Ingreso Bancaribe",
       "ingreso": 16200,
       "egreso": 0,
-      "saldo": 20050
+      "saldo": 20050,
+      "monto": 16200
     },
     {
       "fecha": "2025-11-04",
       "descripcion": "Envio de Pañales",
       "ingreso": 0,
       "egreso": 0,
-      "saldo": 1850
+      "saldo": 1850,
+      "monto": 0
     },
     {
       "fecha": "2025-11-02",
       "descripcion": "Envio dinero Ana Maria",
       "ingreso": 0,
       "egreso": 3000,
-      "saldo": 1850
+      "saldo": 1850,
+      "monto": -3000
     },
     {
       "fecha": "2025-10-17",
       "descripcion": "Envio dinero Ana Maria",
       "ingreso": 0,
       "egreso": 2050,
-      "saldo": 4850
+      "saldo": 4850,
+      "monto": -2050
     },
     {
       "fecha": "2025-10-14",
       "descripcion": "Compra farmatodo",
       "ingreso": 0,
       "egreso": 11000,
-      "saldo": 6900
+      "saldo": 6900,
+      "monto": -11000
     },
     {
       "fecha": "2025-10-08",
       "descripcion": "Ingreso Bancaribe",
       "ingreso": 6350,
       "egreso": 0,
-      "saldo": 17900
+      "saldo": 17900,
+      "monto": 6350
     },
     {
       "fecha": "2025-10-08",
