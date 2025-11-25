@@ -1,10 +1,11 @@
-// documentos.js - VERSIÓN COMPLETA CON CRUD Y SUBIDA DE ARCHIVOS
+// documentos.js - VERSIÓN CON NUEVO FLUJO DE AGREGAR DOCUMENTOS
 
 const documentos = {
   documentosList: [],
   tokenActual: null,
   isModifying: false,
   container: null,
+  archivoSubido: null, // Para almacenar la información del archivo subido
 
   // Función para determinar el tipo de archivo
   obtenerTipoArchivo(nombreArchivo) {
@@ -27,28 +28,23 @@ const documentos = {
 
     elements.docModalTitle.textContent = elemento.textContent.trim();
 
-    // Remover manejador de errores anterior si existe
     if (state.imageErrorHandler) {
       elements.docImage.removeEventListener("error", state.imageErrorHandler);
     }
 
     if (tipoArchivo === "imagen") {
-      // Mostrar imagen
       elements.docIframe.style.display = "none";
       elements.docImage.style.display = "block";
       elements.docImage.src = encodeURI(rutaCompleta);
       elements.docImage.alt = elemento.textContent.trim();
 
-      // Configurar nuevo manejador de errores para esta imagen específica
       state.imageErrorHandler = () => this.manejarErrorImagen(archivo);
       elements.docImage.addEventListener("error", state.imageErrorHandler);
 
-      // Manejar carga exitosa de imagen
       elements.docImage.onload = function () {
         console.log("Imagen cargada correctamente:", archivo);
       };
     } else {
-      // Mostrar PDF u otros archivos
       elements.docImage.style.display = "none";
       elements.docIframe.style.display = "block";
       elements.docIframe.src = encodeURI(rutaCompleta);
@@ -56,8 +52,6 @@ const documentos = {
 
     docModalInstance.show();
   },
-
-  // --- NUEVAS FUNCIONES CRUD ---
 
   // Renderizar documentos en modo lectura
   renderizarDocumentos(documentos) {
@@ -95,10 +89,6 @@ const documentos = {
       </div>
       
       <div id="feedbackDocumentos" class="mt-3"></div>
-
-      <div class="mt-3 text-muted small">
-        Nota: Los archivos se almacenan en la carpeta docs/ y subcarpetas.
-      </div>
     `;
 
     if (this.container) {
@@ -108,7 +98,6 @@ const documentos = {
       return;
     }
 
-    // Event listeners
     this.inicializarEventosDocumentos();
     document.getElementById("btnModificarDocumentos")?.addEventListener("click", () => {
       this.solicitarTokenModificacion();
@@ -118,6 +107,7 @@ const documentos = {
   // Renderizar documentos en modo edición
   renderizarFormularioModificacion() {
     this.isModifying = true;
+    this.archivoSubido = null;
 
     const documentosHTML = this.documentosList
       .map(
@@ -174,21 +164,16 @@ const documentos = {
             
             <div class="mt-4 d-flex justify-content-between">
               <div>
-                <button type="submit" id="btnGuardarDocumentos" class="btn btn-success me-2">
-                  <i class="bi bi-check-circle"></i> Guardar Cambios
+                <button type="button" id="btnVolverDocumentos" class="btn btn-secondary me-2">
+                  <i class="bi bi-arrow-left"></i> Volver
                 </button>
-                <button type="button" id="btnCancelarModDocumentos" class="btn btn-secondary">
-                  <i class="bi bi-x-circle"></i> Cancelar
-                </button>
-              </div>
-              <div>
-                <button type="button" id="btnAddDocumento" class="btn btn-info me-2">
+                <button type="button" id="btnAgregarDocumento" class="btn btn-info">
                   <i class="bi bi-plus-circle"></i> Agregar Documento
                 </button>
-                <button type="button" id="btnSubirArchivo" class="btn btn-primary">
-                  <i class="bi bi-upload"></i> Subir Archivo
-                </button>
               </div>
+              <button type="submit" id="btnGuardarDocumentos" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Guardar Cambios
+              </button>
             </div>
           </form>
           <div id="feedbackDocumentos" class="mt-3"></div>
@@ -205,47 +190,58 @@ const documentos = {
       e.preventDefault();
       this.manejarGuardadoDocumentos();
     });
-    document.getElementById("btnCancelarModDocumentos")?.addEventListener("click", () => {
+    document.getElementById("btnVolverDocumentos")?.addEventListener("click", () => {
       this.cancelarModificacion();
     });
-    document.getElementById("btnAddDocumento")?.addEventListener("click", () => {
-      this.agregarNuevoDocumento();
-    });
-    document.getElementById("btnSubirArchivo")?.addEventListener("click", () => {
-      this.mostrarModalSubida();
+    document.getElementById("btnAgregarDocumento")?.addEventListener("click", () => {
+      this.mostrarFormularioAgregarDocumento();
     });
     
     this.inicializarEventosModificacion();
   },
 
-  // Mostrar modal para subir archivo
-  mostrarModalSubida() {
+  // Mostrar formulario para agregar nuevo documento
+  mostrarFormularioAgregarDocumento() {
     const modalHTML = `
-      <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+      <div class="modal fade" id="agregarDocModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Subir Archivo a GitHub</h5>
+              <h5 class="modal-title">Agregar Nuevo Documento</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-              <form id="uploadForm">
+              <form id="formAgregarDocumento">
                 <div class="mb-3">
-                  <label for="archivoInput" class="form-label">Seleccionar archivo</label>
-                  <input type="file" class="form-control" id="archivoInput" required>
+                  <label for="nombreDocumento" class="form-label">Nombre del Documento *</label>
+                  <input type="text" class="form-control" id="nombreDocumento" 
+                         placeholder="Ingrese el nombre del documento" required>
+                  <small class="form-text text-muted">Debe tener más de 3 caracteres</small>
                 </div>
+                
                 <div class="mb-3">
-                  <label for="rutaDestino" class="form-label">Ruta de destino (desde docs/)</label>
-                  <input type="text" class="form-control" id="rutaDestino" 
-                         placeholder="subcarpeta/archivo.ext o archivo.ext" required>
-                  <small class="form-text text-muted">El archivo se guardará en: docs/[ruta ingresada]</small>
+                  <label for="archivoDocumento" class="form-label">Archivo</label>
+                  <input type="text" class="form-control" id="archivoDocumento" 
+                         placeholder="Se completará automáticamente al subir el archivo" disabled>
                 </div>
-                <div id="uploadFeedback"></div>
+                
+                <div class="mb-3">
+                  <button type="button" id="btnSubirArchivo" class="btn btn-outline-primary" disabled>
+                    <i class="bi bi-upload"></i> Subir Archivo
+                  </button>
+                  <small class="form-text text-muted d-block">
+                    Primero ingrese el nombre del documento para habilitar la subida
+                  </small>
+                </div>
+                
+                <div id="feedbackAgregarDoc" class="mt-3"></div>
               </form>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-primary" id="btnSubirConfirmar">Subir Archivo</button>
+              <button type="button" id="btnConfirmarAgregar" class="btn btn-success" disabled>
+                <i class="bi bi-check-circle"></i> Agregar Documento
+              </button>
             </div>
           </div>
         </div>
@@ -253,41 +249,143 @@ const documentos = {
     `;
 
     // Agregar modal al DOM si no existe
-    if (!document.getElementById('uploadModal')) {
+    if (!document.getElementById('agregarDocModal')) {
       document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+    const agregarDocModal = new bootstrap.Modal(document.getElementById('agregarDocModal'));
+    
+    // Configurar eventos del modal
+    this.configurarEventosAgregarDocumento();
+    
+    agregarDocModal.show();
+  },
+
+  // Configurar eventos del formulario de agregar documento
+  configurarEventosAgregarDocumento() {
+    const nombreInput = document.getElementById('nombreDocumento');
+    const archivoInput = document.getElementById('archivoDocumento');
+    const btnSubir = document.getElementById('btnSubirArchivo');
+    const btnConfirmar = document.getElementById('btnConfirmarAgregar');
+    const feedback = document.getElementById('feedbackAgregarDoc');
+
+    // Limpiar estado anterior
+    this.archivoSubido = null;
+    nombreInput.value = '';
+    archivoInput.value = '';
+    btnSubir.disabled = true;
+    btnConfirmar.disabled = true;
+
+    // Validar nombre en tiempo real
+    nombreInput.addEventListener('input', () => {
+      const nombreValido = nombreInput.value.trim().length > 3;
+      btnSubir.disabled = !nombreValido;
+      
+      // Si ya se subió un archivo, habilitar el botón de confirmar
+      if (nombreValido && this.archivoSubido) {
+        btnConfirmar.disabled = false;
+      } else {
+        btnConfirmar.disabled = true;
+      }
+    });
+
+    // Evento para subir archivo
+    btnSubir.addEventListener('click', () => {
+      this.mostrarModalSubidaArchivo();
+    });
+
+    // Evento para confirmar agregar documento
+    btnConfirmar.addEventListener('click', () => {
+      this.agregarDocumentoConfirmado();
+    });
+  },
+
+  // Mostrar modal para subir archivo
+  mostrarModalSubidaArchivo() {
+    const modalHTML = `
+      <div class="modal fade" id="subirArchivoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Subir Archivo</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <form id="formSubirArchivo">
+                <div class="mb-3">
+                  <label for="archivoInput" class="form-label">Seleccionar archivo *</label>
+                  <input type="file" class="form-control" id="archivoInput" required>
+                </div>
+                <div class="mb-3">
+                  <label for="rutaDestino" class="form-label">Ruta de destino (opcional)</label>
+                  <input type="text" class="form-control" id="rutaDestino" 
+                         placeholder="subcarpeta (dejar vacío para docs/)">
+                  <small class="form-text text-muted">
+                    Si se especifica una subcarpeta, el archivo se guardará en: docs/[subcarpeta]/
+                  </small>
+                </div>
+                <div id="feedbackSubirArchivo"></div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-primary" id="btnConfirmarSubida">Subir Archivo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (!document.getElementById('subirArchivoModal')) {
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    const subirArchivoModal = new bootstrap.Modal(document.getElementById('subirArchivoModal'));
     
     // Configurar evento de subida
-    document.getElementById('btnSubirConfirmar').onclick = () => {
+    document.getElementById('btnConfirmarSubida').onclick = () => {
       this.subirArchivoGitHub();
     };
 
-    uploadModal.show();
+    // Limpiar formulario al mostrar
+    document.getElementById('archivoInput').value = '';
+    document.getElementById('rutaDestino').value = '';
+    document.getElementById('feedbackSubirArchivo').innerHTML = '';
+
+    subirArchivoModal.show();
   },
 
   // Subir archivo a GitHub
   async subirArchivoGitHub() {
     const fileInput = document.getElementById('archivoInput');
     const rutaDestino = document.getElementById('rutaDestino').value.trim();
-    const feedback = document.getElementById('uploadFeedback');
+    const feedback = document.getElementById('feedbackSubirArchivo');
 
     if (!fileInput.files.length) {
       feedback.innerHTML = '<div class="alert alert-warning">Seleccione un archivo</div>';
       return;
     }
 
-    if (!rutaDestino) {
-      feedback.innerHTML = '<div class="alert alert-warning">Ingrese la ruta de destino</div>';
-      return;
+    const file = fileInput.files[0];
+    const nombreArchivo = file.name;
+    
+    // Construir ruta completa
+    let rutaCompleta = 'docs/';
+    if (rutaDestino) {
+      rutaCompleta += `${rutaDestino}/`;
+    }
+    rutaCompleta += nombreArchivo;
+
+    // Ruta relativa para el campo archivo
+    let rutaRelativa = '';
+    if (rutaDestino) {
+      rutaRelativa = `${rutaDestino}/${nombreArchivo}`;
+    } else {
+      rutaRelativa = nombreArchivo;
     }
 
-    const file = fileInput.files[0];
-    const rutaCompleta = `docs/${rutaDestino}`;
-
     try {
-      feedback.innerHTML = '<div class="alert alert-info">Subiendo archivo...</div>';
+      feedback.innerHTML = '<div class="alert alert-info">Subiendo archivo a GitHub...</div>';
 
       // Leer archivo como base64
       const base64Content = await this.fileToBase64(file);
@@ -295,24 +393,117 @@ const documentos = {
       // Subir a GitHub
       await github.guardarArchivo(
         rutaCompleta,
-        base64Content.split(',')[1], // Remover el prefijo data:...
+        base64Content.split(',')[1],
         this.tokenActual,
-        `Subir archivo: ${rutaDestino}`
+        `Subir archivo: ${rutaRelativa}`
       );
 
       feedback.innerHTML = '<div class="alert alert-success">Archivo subido exitosamente</div>';
       
-      // Cerrar modal después de 2 segundos
+      // Guardar información del archivo subido
+      this.archivoSubido = {
+        nombreArchivo: nombreArchivo,
+        rutaRelativa: rutaRelativa
+      };
+
+      // Actualizar el formulario principal
       setTimeout(() => {
-        bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-        // Agregar el nuevo archivo a la lista
-        this.agregarDocumentoDesdeSubida(file.name, rutaDestino);
-      }, 2000);
+        bootstrap.Modal.getInstance(document.getElementById('subirArchivoModal')).hide();
+        this.actualizarFormularioConArchivoSubido();
+      }, 1500);
 
     } catch (error) {
       console.error('Error subiendo archivo:', error);
       feedback.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
     }
+  },
+
+  // Actualizar formulario con archivo subido
+  actualizarFormularioConArchivoSubido() {
+    const archivoInput = document.getElementById('archivoDocumento');
+    const btnConfirmar = document.getElementById('btnConfirmarAgregar');
+    const nombreInput = document.getElementById('nombreDocumento');
+
+    if (this.archivoSubido) {
+      archivoInput.value = this.archivoSubido.rutaRelativa;
+      
+      // Habilitar botón de confirmar si el nombre es válido
+      if (nombreInput.value.trim().length > 3) {
+        btnConfirmar.disabled = false;
+      }
+    }
+  },
+
+  // Agregar documento confirmado
+  agregarDocumentoConfirmado() {
+    const nombreInput = document.getElementById('nombreDocumento');
+    const archivoInput = document.getElementById('archivoDocumento');
+    const feedback = document.getElementById('feedbackAgregarDoc');
+
+    const nombre = nombreInput.value.trim();
+    const archivo = archivoInput.value.trim();
+
+    if (!nombre || nombre.length <= 3) {
+      feedback.innerHTML = '<div class="alert alert-warning">El nombre debe tener más de 3 caracteres</div>';
+      return;
+    }
+
+    if (!archivo) {
+      feedback.innerHTML = '<div class="alert alert-warning">Debe subir un archivo primero</div>';
+      return;
+    }
+
+    // Agregar a la tabla
+    this.agregarFilaDocumento(nombre, archivo);
+
+    // Cerrar modal y limpiar
+    bootstrap.Modal.getInstance(document.getElementById('agregarDocModal')).hide();
+    this.archivoSubido = null;
+  },
+
+  // Agregar fila a la tabla de documentos
+  agregarFilaDocumento(nombre, archivo) {
+    const tableBody = document.getElementById("documentosTableBody");
+    const newIndex = tableBody.children.length;
+
+    const newRow = document.createElement("tr");
+    newRow.dataset.index = newIndex;
+    newRow.classList.add("fila-documento-mod", "bg-light");
+
+    newRow.innerHTML = `
+      <td>
+        <input type="text" class="form-control form-control-sm input-nombre" 
+               value="${nombre}" placeholder="Nombre del documento" required>
+      </td>
+      <td>
+        <input type="text" class="form-control form-control-sm input-archivo" 
+               value="${archivo}" placeholder="archivo.ext o subcarpeta/archivo.ext" required>
+        <small class="form-text text-muted">Ruta relativa desde docs/</small>
+      </td>
+      <td class="text-center">
+        <span class="badge bg-secondary">${this.obtenerTipoArchivo(archivo).toUpperCase()}</span>
+      </td>
+      <td class="text-end">
+        <button type="button" class="btn btn-sm btn-danger btn-eliminar-documento" 
+                data-index="${newIndex}" title="Eliminar documento">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+
+    tableBody.appendChild(newRow);
+    
+    // Actualizar tipo cuando se escribe en el campo archivo
+    const archivoInput = newRow.querySelector('.input-archivo');
+    archivoInput.addEventListener('input', (e) => {
+      const tipo = this.obtenerTipoArchivo(e.target.value);
+      newRow.querySelector('.badge').textContent = tipo.toUpperCase();
+      newRow.querySelector('.badge').className = `badge bg-${tipo === 'imagen' ? 'success' : 'secondary'}`;
+    });
+
+    newRow.querySelector(".btn-eliminar-documento").addEventListener("click", (e) => {
+      this.eliminarDocumento(newRow);
+    });
   },
 
   // Convertir archivo a base64
@@ -322,101 +513,6 @@ const documentos = {
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
       reader.onerror = error => reject(error);
-    });
-  },
-
-  // Agregar documento desde subida
-  agregarDocumentoDesdeSubida(nombreArchivo, rutaDestino) {
-    const tableBody = document.getElementById("documentosTableBody");
-    const newIndex = tableBody.children.length;
-
-    const newRow = document.createElement("tr");
-    newRow.dataset.index = newIndex;
-    newRow.classList.add("fila-documento-mod", "bg-light");
-
-    newRow.innerHTML = `
-      <td>
-        <input type="text" class="form-control form-control-sm input-nombre" 
-               value="${nombreArchivo}" placeholder="Nombre del documento" required>
-      </td>
-      <td>
-        <input type="text" class="form-control form-control-sm input-archivo" 
-               value="${rutaDestino}" placeholder="archivo.ext o subcarpeta/archivo.ext" required>
-        <small class="form-text text-muted">Ruta relativa desde docs/</small>
-      </td>
-      <td class="text-center">
-        <span class="badge bg-secondary">${this.obtenerTipoArchivo(rutaDestino).toUpperCase()}</span>
-      </td>
-      <td class="text-end">
-        <button type="button" class="btn btn-sm btn-danger btn-eliminar-documento" 
-                data-index="${newIndex}" title="Eliminar documento">
-          <i class="bi bi-trash"></i>
-        </button>
-      </td>
-    `;
-
-    tableBody.appendChild(newRow);
-    
-    // Actualizar tipo cuando se escribe en el campo archivo
-    const archivoInput = newRow.querySelector('.input-archivo');
-    archivoInput.addEventListener('input', (e) => {
-      const tipo = this.obtenerTipoArchivo(e.target.value);
-      newRow.querySelector('.badge').textContent = tipo.toUpperCase();
-      newRow.querySelector('.badge').className = `badge bg-${tipo === 'imagen' ? 'success' : 'secondary'}`;
-    });
-
-    newRow.querySelector(".btn-eliminar-documento").addEventListener("click", (e) => {
-      this.eliminarDocumento(newRow);
-    });
-  },
-
-  // Agregar nuevo documento
-  agregarNuevoDocumento() {
-    const tableBody = document.getElementById("documentosTableBody");
-    const newIndex = tableBody.children.length;
-
-    const newRow = document.createElement("tr");
-    newRow.dataset.index = newIndex;
-    newRow.classList.add("fila-documento-mod", "bg-light");
-
-    const nuevoDocumento = {
-      nombre: "",
-      archivo: "",
-    };
-
-    newRow.innerHTML = `
-      <td>
-        <input type="text" class="form-control form-control-sm input-nombre" 
-               value="${nuevoDocumento.nombre}" placeholder="Nombre del documento" required>
-      </td>
-      <td>
-        <input type="text" class="form-control form-control-sm input-archivo" 
-               value="${nuevoDocumento.archivo}" placeholder="archivo.ext o subcarpeta/archivo.ext" required>
-        <small class="form-text text-muted">Ruta relativa desde docs/</small>
-      </td>
-      <td class="text-center">
-        <span class="badge bg-secondary">-</span>
-      </td>
-      <td class="text-end">
-        <button type="button" class="btn btn-sm btn-danger btn-eliminar-documento" 
-                data-index="${newIndex}" title="Eliminar documento">
-          <i class="bi bi-trash"></i>
-        </button>
-      </td>
-    `;
-
-    tableBody.appendChild(newRow);
-    
-    // Actualizar tipo cuando se escribe en el campo archivo
-    const archivoInput = newRow.querySelector('.input-archivo');
-    archivoInput.addEventListener('input', (e) => {
-      const tipo = this.obtenerTipoArchivo(e.target.value);
-      newRow.querySelector('.badge').textContent = tipo.toUpperCase();
-      newRow.querySelector('.badge').className = `badge bg-${tipo === 'imagen' ? 'success' : 'secondary'}`;
-    });
-
-    newRow.querySelector(".btn-eliminar-documento").addEventListener("click", (e) => {
-      this.eliminarDocumento(newRow);
     });
   },
 
@@ -435,7 +531,6 @@ const documentos = {
       });
     });
 
-    // Actualizar tipos en tiempo real
     document.querySelectorAll(".input-archivo").forEach(input => {
       input.addEventListener('input', (e) => {
         const row = e.target.closest('tr');
@@ -460,7 +555,7 @@ const documentos = {
         if (nombre && archivo) {
           nuevosDocumentos.push({
             nombre: nombre,
-            archivo: archivo // Solo guardamos la ruta relativa desde docs/
+            archivo: archivo
           });
         }
       }
@@ -493,7 +588,6 @@ const documentos = {
         throw new Error("Debe haber al menos un documento.");
       }
 
-      // Guardar en GitHub
       await this.guardarEnGitHub(nuevosDocumentos, this.tokenActual);
 
       feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Documentos actualizados exitosamente</strong><br><small>Los cambios han sido enviados a GitHub. La página se recargará en 2 segundos...</small></div>`;
@@ -535,11 +629,9 @@ const documentos = {
   // Guardar en GitHub
   async guardarEnGitHub(documentos, githubToken) {
     try {
-      // Convertir documentos a JSON y luego a base64
       const contenidoJSON = JSON.stringify(documentos, null, 2);
       const contenidoBase64 = btoa(unescape(encodeURIComponent(contenidoJSON)));
 
-      // Guardar en el archivo de documentos
       await github.guardarArchivo(
         "json/documentos.json",
         contenidoBase64,
@@ -554,13 +646,6 @@ const documentos = {
   },
 
   // Inicializar eventos de documentos (para modo lectura)
-  inicializarEventos() {
-    document.querySelectorAll(".doc-item").forEach((item) => {
-      item.addEventListener("click", () => this.abrirDocumento(item));
-    });
-  },
-
-  // Inicializar eventos de documentos (para modo lectura)
   inicializarEventosDocumentos() {
     if (this.container) {
       this.container.querySelectorAll(".doc-item").forEach((item) => {
@@ -571,7 +656,6 @@ const documentos = {
 
   // Cargar documentos iniciales
   cargarDocumentosIniciales() {
-    // Documentos por defecto - ahora con rutas relativas desde docs/
     const documentosIniciales = [
       { nombre: "Mi Conexión Bancaribe - Personas", archivo: "Mi Conexión Bancaribe - Personas .pdf" },
       { nombre: "SENIAT", archivo: "SENIAT.jpeg" },
@@ -594,6 +678,6 @@ const documentos = {
     }
     
     this.cargarDocumentosIniciales();
-    console.log('Pestaña "Documentos" inicializada con gestión CRUD y subida de archivos');
+    console.log('Pestaña "Documentos" inicializada con nuevo flujo de agregar documentos');
   },
 };
