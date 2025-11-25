@@ -74,7 +74,7 @@ const documentos = {
       
       const githubUser = CONFIG.GITHUB.OWNER;
       const githubRepo = CONFIG.GITHUB.REPO;
-      // Usar la URL raw para que el navegador pueda mostrar la imagen directamente
+      // Usar la URL raw para que el navegador pueda  la imagen directamente
       const rawUrl = `https://raw.githubusercontent.com/${githubUser}/${githubRepo}/${CONFIG.GITHUB.BRANCH}/${archivo}`;
       
       elements.docImage.src = encodeURI(rawUrl);
@@ -111,13 +111,15 @@ const documentos = {
     `;
     
     // Adjuntar evento al nuevo botón "Mostrar Documentos"
-    const mostrarDocsBtn = document.getElementById('mostrarDocsBtn');
+    setTimeout(() => {
+        const mostrarDocsBtn = document.getElementById('mostrarDocsBtn');
     if (mostrarDocsBtn) {
         mostrarDocsBtn.addEventListener('click', () => this.cargarDocumentosDesdeGithub());
-    }
-    
+    }    
     // Renderizar el botón de subir
     this.renderizarBotonSubir();
+}, 1000);
+    
   },
   
   // Función auxiliar para renderizar el botón de subir
