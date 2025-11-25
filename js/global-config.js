@@ -1,25 +1,27 @@
-// js/global-config.js
 const CONFIG = {
-  // Configuración de rutas de lectura (para fetch)
+  // Rutas para lectura (fetch)
   JSON_URL: "json/datos-basicos.json",
   LOGIN_URL: "login.html",
   
-  // Rutas de archivos en el repositorio (para la API de GitHub)
+  // Rutas de archivos en el repositorio (CRÍTICO: No modificar estas rutas)
   PATHS: {
-    ENCRIPTADO: "json/datos-basicos-encriptado.json",
-    TRANSACCIONES: "json/transacciones.json",
-    DOCS: "docs/"
+    ENCRIPTADO: "json/datos-basicos-encriptado.json", // Aquí van claves y accesos
+    TRANSACCIONES: "json/transacciones.json",        // Aquí van los gastos
+    DOCS: "docs/"                                    // Carpeta de documentos
   },
 
-  // Configuración base de GitHub
+  // Atajos para compatibilidad con scripts antiguos (Redireccionan a PATHS)
+  get DATOS_ENCRYPTED_PATH() { return this.PATHS.ENCRIPTADO; },
+
+  // Configuración de GitHub
   GITHUB: {
-    OWNER: "suarezfco65",
-    REPO: "nelly",
+    OWNER: "suarezfco65", // Tu usuario
+    REPO: "nelly",       // Tu repositorio
     BRANCH: "main",
     API_BASE: "https://api.github.com/repos/suarezfco65/nelly",
   },
   
-  PROXY_URL: "/api/proxy" // No se usará en GitHub Pages, pero se deja por compatibilidad
+  PROXY_URL: "/api/proxy" // Solo por compatibilidad, no se usa en Pages
 };
 
 window.CONFIG = CONFIG;
