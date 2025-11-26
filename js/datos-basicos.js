@@ -316,7 +316,7 @@ const datosBasicos = {
                 </div>
             </div>
             <div class="mt-4">
-              <button type="submit" class="btn btn-success">
+              <button type="button" class="btn btn-success">
                 <i class="bi bi-check-circle"></i> Guardar Cambios
               </button>
               <button type="button" id="btnCancelarModificacionBasicos" class="btn btn-secondary">
@@ -528,8 +528,9 @@ const datosBasicos = {
         "datos-basicos": datosBasicosMod,
         accesos: accesosMod,
       };
+      
       console.log(datosFinales);
-      /*
+      
       // 2. Guardar en GitHub (CORREGIDO)
       await this.guardarEnGitHub(datosFinales); // ← ESTA ES LA CORRECCIÓN PRINCIPAL
 
@@ -540,7 +541,6 @@ const datosBasicos = {
       setTimeout(() => {
         location.reload();
       }, 2000);
-      */
     } catch (error) {
       console.error("Error modificando datos:", error);
       feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
