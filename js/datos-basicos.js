@@ -166,7 +166,7 @@ const datosBasicos = {
       )}</span>`;
     }
 
-    // Mostrar formato correspondiente al tipo
+// Mostrar formato correspondiente al tipo
     switch (item.tipo) {
       case "fecha":
         return valor ? new Date(valor).toLocaleDateString() : "N/A";
@@ -176,6 +176,11 @@ const datosBasicos = {
         return valor === "true" || valor === true
           ? '<span class="badge bg-success">Sí</span>'
           : '<span class="badge bg-danger">No</span>';
+      case "texto": // <-- CAMBIO 1: Nuevo caso para 'texto'
+        // Mostrar texto multilinea con saltos de línea (usando <br> para HTML)
+        return valor
+          ? `<span style="white-space: pre-wrap;">${valor}</span>`
+          : "";
       default:
         return valor;
     }
@@ -232,6 +237,8 @@ const datosBasicos = {
             : "";
         // El valor real debe ser capturado del checked state
         return `<div class="form-check form-switch"><input type="checkbox" id="${id}" ${baseAttr} ${checked} class="form-check-input input-boolean" role="switch"></div>`;
+      case "texto": // <-- CAMBIO 2: Nuevo caso para 'texto' (textarea)
+        return `<textarea id="${id}" rows="4" ${baseAttr} required>${item.valor}</textarea>`;
       default: // string
         return `<input type="text" id="${id}" value="${item.valor}" ${baseAttr} required>`;
     }
@@ -301,6 +308,7 @@ const datosBasicos = {
                                 <option value="fecha">fecha</option>
                                 <option value="numero">número</option>
                                 <option value="boolean">boolean</option>
+                                <option value="texto">texto</option>
                             </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-center">
