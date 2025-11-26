@@ -166,7 +166,7 @@ const datosBasicos = {
       )}</span>`;
     }
 
-// Mostrar formato correspondiente al tipo
+    // Mostrar formato correspondiente al tipo
     switch (item.tipo) {
       case "fecha":
         return valor ? new Date(valor).toLocaleDateString() : "N/A";
@@ -244,6 +244,35 @@ const datosBasicos = {
     }
   },
 
+  // --- Lógica de Arrastre (Drag and Drop) ---
+  inicializarDragAndDrop() {
+    const container = document.getElementById("camposDinamicosContainer");
+    if (!container) return;
+
+    // Aquí se integraría una librería como SortableJS o la lógica nativa.
+    // Ejemplo usando la clase 'sortable' para la lógica nativa o de librería:
+    container.classList.add("sortable-container");
+
+    // **NOTA IMPORTANTE:** Para una implementación funcional, necesitarás incluir
+    // la librería SortableJS y usar su inicializador aquí:
+    new Sortable(container, {
+      animation: 150,
+      ghostClass: "blue-background-class", // Clase para el elemento fantasma
+      handle: ".form-campo-row", // Permite arrastrar toda la fila
+      onEnd: function (evt) {
+        console.log(
+          "Campo movido de la posición " + evt.oldIndex + " a " + evt.newIndex
+        );
+        // La estructura DOM se actualiza automáticamente; no se necesita más lógica aquí.
+      },
+    });
+
+    // Si no usas una librería, aquí debería ir la lógica de eventos dragstart, dragover, drop, etc.
+    console.log(
+      "Funcionalidad Drag and Drop inicializada en #camposDinamicosContainer."
+    );
+  },
+
   renderizarFormularioModificacion() {
     this.isModifying = true; // Activar flag de modificación
     const datos = this.datosCompletos["datos-basicos"];
@@ -289,7 +318,7 @@ const datosBasicos = {
         </div>
         <div class="card-body">
           <form id="formModificarDatosBasicos">
-            <div id="camposDinamicosContainer">
+            <div id="camposDinamicosContainer" class="drag-list">
                 ${formularioCampos}
             </div>
             
@@ -370,6 +399,9 @@ const datosBasicos = {
           this.eliminarCampo(e.target.closest(".form-campo-row"))
         );
       });
+
+    // CAMBIO 4: Inicializar la funcionalidad de arrastre
+    this.inicializarDragAndDrop();
   },
 
   // --- Lógica del Token ---
@@ -536,9 +568,9 @@ const datosBasicos = {
         "datos-basicos": datosBasicosMod,
         accesos: accesosMod,
       };
-      
+
       console.log(datosFinales);
-      
+
       // 2. Guardar en GitHub (CORREGIDO)
       await this.guardarEnGitHub(datosFinales); // ← ESTA ES LA CORRECCIÓN PRINCIPAL
 

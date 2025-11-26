@@ -3,22 +3,25 @@ const github = {
   PROXY_URL: CONFIG.PROXY_URL,
 
   // Función centralizada para obtener token
-  obtenerToken: function(solicitarSiFalta = true, proposito = "esta operación") {
+  obtenerToken: function (
+    solicitarSiFalta = true,
+    proposito = "esta operación"
+  ) {
     let token = seguridad.gestionarTokens.obtenerToken();
-    
+
     if (!token && solicitarSiFalta) {
       token = prompt(`Para ${proposito}, ingrese su Token de GitHub:`);
       if (token) {
         seguridad.gestionarTokens.guardarToken(token);
       }
     }
-    
+
     return token;
   },
 
   // Función para detectar si estamos en GitHub Pages
-  _esGitHubPages: function() {
-    return window.location.hostname.includes('github.io');
+  _esGitHubPages: function () {
+    return window.location.hostname.includes("github.io");
   },
 
   // Función principal que decide si usar proxy o GitHub directamente
@@ -41,10 +44,10 @@ const github = {
         filePath: filePath,
         data: {
           branch: CONFIG.GITHUB.BRANCH,
-          ...data
-        }
+          ...data,
+        },
       };
-
+      /*
       const response = await fetch(this.PROXY_URL, {
         method: "POST",
         headers: {
@@ -52,127 +55,143 @@ const github = {
         },
         body: JSON.stringify(bodyPayload),
       });
-      
+
       const result = await response.json();
 
       if (!result.ok) {
-        const status = result.status || '500';
-        const errorMessage = result.data?.message || result.error || 'Error desconocido en la llamada al proxy.';
-        throw new Error(`Error ${status} al ejecutar acción '${action}' en GitHub: ${errorMessage}`);
+        const status = result.status || "500";
+        const errorMessage =
+          result.data?.message ||
+          result.error ||
+          "Error desconocido en la llamada al proxy.";
+        throw new Error(
+          `Error ${status} al ejecutar acción '${action}' en GitHub: ${errorMessage}`
+        );
       }
 
       return result.data;
+      */
     } catch (proxyError) {
-      console.warn('Proxy falló, usando GitHub directamente:', proxyError);
+      console.warn("Proxy falló, usando GitHub directamente:", proxyError);
       return await this._fetchGitHubDirectly(token, action, filePath, data);
     }
   },
 
   // Función para llamar a GitHub API directamente (sin proxy)
-async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
-  const GITHUB_API_BASE = "https://api.github.com/repos/suarezfco65/nelly";
-  let url;
-  let options = {
-    headers: {
-      "Authorization": `Bearer ${githubToken}`,
-      "Accept": "application/vnd.github.v3+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": "Nelly-App"
-    }
-  };
+  async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
+    const GITHUB_API_BASE = "https://api.github.com/repos/suarezfco65/nelly";
+    let url;
+    let options = {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: "application/vnd.github.v3+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "Nelly-App",
+      },
+    };
 
-  switch (action) {
-    case "getFile":
-      if (!filePath) {
-        throw new Error("filePath requerido para getFile");
-      }
-      url = `${GITHUB_API_BASE}/contents/${filePath}`;
-      options.method = "GET";
-      break;
+    switch (action) {
+      case "getFile":
+        if (!filePath) {
+          throw new Error("filePath requerido para getFile");
+        }
+        url = `${GITHUB_API_BASE}/contents/${filePath}`;
+        options.method = "GET";
+        break;
 
-    case "listDir":
-      if (!filePath) {
-        throw new Error("filePath requerido para listDir");
-      }
-      const branch = data.branch || "main";
-      url = `${GITHUB_API_BASE}/contents/${filePath}?ref=${branch}`;
-      options.method = "GET";
-      break;
+      case "listDir":
+        if (!filePath) {
+          throw new Error("filePath requerido para listDir");
+        }
+        const branch = data.branch || "main";
+        url = `${GITHUB_API_BASE}/contents/${filePath}?ref=${branch}`;
+        options.method = "GET";
+        break;
 
-    case "updateFile":
-      if (!filePath) {
-        throw new Error("filePath requerido para updateFile");
-      }
-      url = `${GITHUB_API_BASE}/contents/${filePath}`;
-      options.method = "PUT";
-      options.headers["Content-Type"] = "application/json";
-      
-      // NUEVO: Obtener SHA del archivo existente antes de actualizar
-      if (!data.sha) {
-        try {
-          const existingFile = await this._fetchGitHubDirectly(githubToken, 'getFile', filePath, {});
-          data.sha = existingFile.sha;
-          console.log('✅ SHA obtenido:', data.sha);
-        } catch (error) {
-          // Si el archivo no existe, no hay SHA (se creará nuevo archivo)
-          if (!error.message.includes('404')) {
+      case "updateFile":
+        if (!filePath) {
+          throw new Error("filePath requerido para updateFile");
+        }
+        url = `${GITHUB_API_BASE}/contents/${filePath}`;
+        options.method = "PUT";
+        options.headers["Content-Type"] = "application/json";
+
+        // NUEVO: Obtener SHA del archivo existente antes de actualizar
+        if (!data.sha) {
+          try {
+            const existingFile = await this._fetchGitHubDirectly(
+              githubToken,
+              "getFile",
+              filePath,
+              {}
+            );
+            data.sha = existingFile.sha;
+            console.log("✅ SHA obtenido:", data.sha);
+          } catch (error) {
+            // Si el archivo no existe, no hay SHA (se creará nuevo archivo)
+            if (!error.message.includes("404")) {
+              throw error;
+            }
+            console.log("📄 Archivo no existe, se creará nuevo");
+          }
+        }
+
+        options.body = JSON.stringify(data);
+        break;
+
+      case "deleteFile":
+        if (!filePath) {
+          throw new Error("filePath requerido para deleteFile");
+        }
+        url = `${GITHUB_API_BASE}/contents/${filePath}`;
+        options.method = "DELETE";
+        options.headers["Content-Type"] = "application/json";
+
+        // NUEVO: Obtener SHA antes de eliminar
+        if (!data.sha) {
+          try {
+            const existingFile = await this._fetchGitHubDirectly(
+              githubToken,
+              "getFile",
+              filePath,
+              {}
+            );
+            data.sha = existingFile.sha;
+          } catch (error) {
+            // Si el archivo no existe, considerar eliminación como exitosa
+            if (error.message.includes("404")) {
+              console.warn("📄 Archivo no encontrado, eliminación innecesaria");
+              return { status: "skipped", message: "Archivo no encontrado" };
+            }
             throw error;
           }
-          console.log('📄 Archivo no existe, se creará nuevo');
         }
-      }
-      
-      options.body = JSON.stringify(data);
-      break;
 
-    case "deleteFile":
-      if (!filePath) {
-        throw new Error("filePath requerido para deleteFile");
-      }
-      url = `${GITHUB_API_BASE}/contents/${filePath}`;
-      options.method = "DELETE";
-      options.headers["Content-Type"] = "application/json";
-      
-      // NUEVO: Obtener SHA antes de eliminar
-      if (!data.sha) {
-        try {
-          const existingFile = await this._fetchGitHubDirectly(githubToken, 'getFile', filePath, {});
-          data.sha = existingFile.sha;
-        } catch (error) {
-          // Si el archivo no existe, considerar eliminación como exitosa
-          if (error.message.includes('404')) {
-            console.warn('📄 Archivo no encontrado, eliminación innecesaria');
-            return { status: 'skipped', message: 'Archivo no encontrado' };
-          }
-          throw error;
-        }
-      }
-      
-      options.body = JSON.stringify(data);
-      break;
+        options.body = JSON.stringify(data);
+        break;
 
-    case "testRepo":
-      url = GITHUB_API_BASE;
-      options.method = "GET";
-      break;
+      case "testRepo":
+        url = GITHUB_API_BASE;
+        options.method = "GET";
+        break;
 
-    default:
-      throw new Error("Acción no válida: " + action);
-  }
+      default:
+        throw new Error("Acción no válida: " + action);
+    }
 
-  console.log(`🔗 GitHub API Directa: ${action} -> ${url}`);
-  
-  const response = await fetch(url, options);
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    const errorMessage = `GitHub API Error: ${response.status} - ${errorData.message}`;
-    console.error(errorMessage, errorData);
-    throw new Error(errorMessage);
-  }
+    console.log(`🔗 GitHub API Directa: ${action} -> ${url}`);
 
-  return await response.json();
-},
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = `GitHub API Error: ${response.status} - ${errorData.message}`;
+      console.error(errorMessage, errorData);
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
 
   // Función para verificar token
   async verificarToken(token = null) {
@@ -184,16 +203,18 @@ async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
     }
 
     const tokenLimpio = tokenUsar.trim();
-    
+
     if (!tokenLimpio.startsWith("github_pat_")) {
-      throw new Error('Formato de token incorrecto (debe empezar con "github_pat_")');
+      throw new Error(
+        'Formato de token incorrecto (debe empezar con "github_pat_")'
+      );
     }
 
     try {
-      await this._fetchProxy('testRepo', '', {}, false);
+      await this._fetchProxy("testRepo", "", {}, false);
       return true;
     } catch (error) {
-      if (error.message.includes('401') || error.message.includes('403')) {
+      if (error.message.includes("401") || error.message.includes("403")) {
         throw new Error(
           `Token inválido o sin permisos. Revise que tenga permisos de 'Contents: Read and Write' para el repositorio ${config.OWNER}/${config.REPO}. Detalle: ${error.message}`
         );
@@ -203,34 +224,34 @@ async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
   },
 
   // Función para obtener contenido de directorio
-  async obtenerContenidoDeDirectorio(dirPath = 'docs') {
-    const contents = await this._fetchProxy('listDir', dirPath, {}, true);
-    
+  async obtenerContenidoDeDirectorio(dirPath = "docs") {
+    const contents = await this._fetchProxy("listDir", dirPath, {}, true);
+
     // Filtrar solo archivos y mapear para obtener el nombre, ruta completa y SHA
     return contents
-      .filter(item => item.type === 'file')
-      .map(item => ({
-          nombre: item.name, 
-          archivo: item.path, 
-          sha: item.sha 
+      .filter((item) => item.type === "file")
+      .map((item) => ({
+        nombre: item.name,
+        archivo: item.path,
+        sha: item.sha,
       }));
   },
 
   // Función para guardar archivo
   async guardarArchivo(filePath, content, commitMessage, sha = null) {
-  const payload = {
-    message: commitMessage,
-    content: content,
-    branch: CONFIG.GITHUB.BRANCH,
-  };
-  
-  // NUEVO: Incluir SHA si se proporciona
-  if (sha) {
-    payload.sha = sha;
-  }
-  
-  return await this._fetchProxy('updateFile', filePath, payload, true);
-},
+    const payload = {
+      message: commitMessage,
+      content: content,
+      branch: CONFIG.GITHUB.BRANCH,
+    };
+
+    // NUEVO: Incluir SHA si se proporciona
+    if (sha) {
+      payload.sha = sha;
+    }
+
+    return await this._fetchProxy("updateFile", filePath, payload, true);
+  },
 
   // Función para eliminar archivo
   async eliminarArchivoDeGitHub(filePath, commitMessage, sha) {
@@ -239,8 +260,8 @@ async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
       sha: sha,
       branch: CONFIG.GITHUB.BRANCH,
     };
-    
-    return await this._fetchProxy('deleteFile', filePath, payload, true);
+
+    return await this._fetchProxy("deleteFile", filePath, payload, true);
   },
 
   // Función para subir archivo
@@ -250,8 +271,8 @@ async _fetchGitHubDirectly(githubToken, action, filePath, data = {}) {
       content: fileContentBase64,
       branch: CONFIG.GITHUB.BRANCH,
     };
-    
-    return await this._fetchProxy('updateFile', filePath, payload, true);
+
+    return await this._fetchProxy("updateFile", filePath, payload, true);
   },
 };
 
