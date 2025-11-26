@@ -316,7 +316,7 @@ const datosBasicos = {
                 </div>
             </div>
             <div class="mt-4">
-              <button type="button" class="btn btn-success">
+              <button type="submit" class="btn btn-success">
                 <i class="bi bi-check-circle"></i> Guardar Cambios
               </button>
               <button type="button" id="btnCancelarModificacionBasicos" class="btn btn-secondary">
@@ -335,7 +335,7 @@ const datosBasicos = {
     document
       .getElementById("formModificarDatosBasicos")
       .addEventListener("submit", (e) => {
-        this.ficacion(e);
+        this.manejarModificacion(e);
       });
     document
       .getElementById("btnCancelarModificacionBasicos")
