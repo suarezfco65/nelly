@@ -538,7 +538,7 @@ const datosBasicos = {
       this.datosCompletos = datosFinales;
       setTimeout(() => {
         location.reload();
-      }, 2000);
+      }, 20000);
     } catch (error) {
       console.error("Error modificando datos:", error);
       feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
