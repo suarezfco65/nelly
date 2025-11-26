@@ -81,10 +81,10 @@ const datosBasicos = {
 
   // --- Migración de Estructura Antigua a Nueva ---
   migrarEstructura(datosLegacy) {
-      // Validar datosLegacy
-  if (!datosLegacy) {
-    datosLegacy = {};
-  }
+    // Validar datosLegacy
+    if (!datosLegacy) {
+      datosLegacy = {};
+    }
     // Intenta extraer los datos del formato antiguo y convertirlos al nuevo
     const preguntas = datosLegacy.preguntasSeguridad || [];
     const accesosAntiguos = datosLegacy.accesos || {};
@@ -240,73 +240,129 @@ const datosBasicos = {
   renderizarFormularioModificacion() {
     this.isModifying = true; // Activar flag de modificación
     const datos = this.datosCompletos["datos-basicos"];
-    
-    // Generar el HTML del formulario
+
     const formularioCampos = datos
       .map(
         (item, index) => `
-        <div class="row mb-3 align-items-center form-campo-row" data-index="${index}">
-            <div class="col-4">
-                <label class="form-label small text-muted">${item.tipo} ${
-                  item.sensible ? "🔑" : ""
-                }</label>
-                <input type="text" class="form-control form-control-sm input-campo-nombre" value="${
-                  item.campo
-                }" required placeholder="Nombre del campo">
-            </div>
-            <div class="col-6">
-                <label for="mod-campo-${index}" class="form-label">Valor</label>
-                ${this.renderizarTipoInput(item).replace(
-                  "required>",
-                  `id="mod-campo-${index}" required>`
-                )}
-            </div>
-            <div class="col-2 text-end">
-                <button type="button" class="btn btn-sm btn-danger btn-eliminar-campo" title="Eliminar campo">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
+      <div class="row mb-3 align-items-center form-campo-row" data-index="${index}" data-sensible="${
+          item.sensible
+        }" data-tipo="${item.tipo}">
+        <div class="col-4">
+            <label class="form-label small text-muted">${item.tipo} ${
+          item.sensible ? "🔑" : ""
+        }</label>
+            <input type="text" class="form-control form-control-sm input-campo-nombre" value="${
+              item.campo
+            }" required placeholder="Nombre del campo">
         </div>
-        `
+        <div class="col-6">
+            <label for="mod-campo-${index}" class="form-label">Valor</label>
+            ${this.renderizarTipoInput(item).replace(
+              "required>",
+              `id="mod-campo-${index}" required>`
+            )}
+        </div>
+        <div class="col-2 text-end">
+            <button type="button" class="btn btn-sm btn-danger btn-eliminar-campo" data-index="${index}" title="Eliminar campo">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+      </div>
+    `
       )
       .join("");
 
-const formularioHTML = `
+    const formularioHTML = `
       <div class="card border-warning">
         <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0">
-                <i class="bi bi-pencil-square"></i> Edición de Datos Básicos
-            </h5>
+          <h5 class="mb-0">
+            <i class="bi bi-pencil-square"></i> Modificar Datos Básicos
+            <small class="text-muted float-end">Token verificado ✓</small>
+          </h5>
         </div>
         <div class="card-body">
+          <form id="formModificarDatosBasicos">
             <div id="camposDinamicosContainer">
                 ${formularioCampos}
             </div>
-            <button type="button" class="btn btn-outline-success btn-sm mt-3" id="agregarNuevoCampoBtn">
-                <i class="bi bi-plus-circle"></i> Añadir Nuevo Campo
-            </button>
+            
+            <div class="mt-4 border-top pt-3">
+                <button type="button" id="btnAddCampo" class="btn btn-sm btn-info mb-3">
+                    <i class="bi bi-plus-circle"></i> Agregar Nuevo Campo
+                </button>
+                <div id="addCampoForm" class="p-3 border rounded d-none">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm" id="newCampoNombre" placeholder="Nombre del nuevo campo">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" id="newCampoTipo">
+                                <option value="string">string</option>
+                                <option value="fecha">fecha</option>
+                                <option value="numero">número</option>
+                                <option value="boolean">boolean</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="newCampoSensible">
+                                <label class="form-check-label small" for="newCampoSensible">Sensible</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnConfirmAddCampo" class="btn btn-sm btn-primary w-100">Agregar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Guardar Cambios
+              </button>
+              <button type="button" id="btnCancelarModificacionBasicos" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </button>
+            </div>
+          </form>
+          <div id="feedbackModificacionBasicos" class="mt-3"></div>
         </div>
       </div>
     `;
 
-// Renderizar y adjuntar eventos
     elements.datosContent.innerHTML = formularioHTML;
-    
-    // 1. Adjuntar eventos de ELIMINACIÓN a los campos ya existentes
-    document.querySelectorAll('.btn-eliminar-campo').forEach(btn => {
-        btn.addEventListener('click', (e) => this.eliminarCampo(e.target.closest('.form-campo-row')));
+
+    // Inicializar eventos del formulario
+    document
+      .getElementById("formModificarDatosBasicos")
+      .addEventListener("submit", (e) => {
+        this.ficacion(e);
+      });
+    document
+      .getElementById("btnCancelarModificacionBasicos")
+      .addEventListener("click", () => {
+        this.tokenActual = null; // Limpiar token
+        this.renderizarDatosBasicos(this.datosCompletos["datos-basicos"]); // Volver al modo lectura
+        // Asegurar que accesos.js también se restaure
+        if (typeof accesos !== "undefined" && accesos.renderizarAccesos) {
+          accesos.renderizarAccesos(this.datosCompletos.accesos);
+        }
+      });
+    document.getElementById("btnAddCampo").addEventListener("click", (e) => {
+      e.target.style.display = "none";
+      document.getElementById("addCampoForm").classList.remove("d-none");
     });
+    document
+      .getElementById("btnConfirmAddCampo")
+      .addEventListener("click", () => this.agregarNuevoCampo());
 
-    // 2. Adjuntar evento para el botón de AÑADIR NUEVO CAMPO
-    document.getElementById('agregarNuevoCampoBtn')?.addEventListener('click', () => this.agregarNuevoCampo());
-},
-
-  // --- Nueva función para la eliminación del campo del DOM ---
-eliminarCampo(fieldElement) {
-    if (confirm('¿Estás seguro de eliminar este campo?')) {
-        fieldElement.remove();
-    }
-},
+    elements.datosContent
+      .querySelectorAll(".btn-eliminar-campo")
+      .forEach((btn) => {
+        btn.addEventListener("click", (e) =>
+          this.eliminarCampo(e.target.closest(".form-campo-row"))
+        );
+      });
+  },
 
   // --- Lógica del Token ---
   async solicitarTokenModificacion() {
@@ -314,7 +370,7 @@ eliminarCampo(fieldElement) {
 
     try {
       feedback.innerHTML = `<div class="alert alert-info py-2"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Verificando token...</div>`;
-      
+
       await github.verificarToken();
 
       // Activar modo modificación en ambas pestañas
@@ -336,38 +392,77 @@ eliminarCampo(fieldElement) {
   },
 
   // --- Lógica de Modificación Dinámica de Campos Básicos ---
-// Reemplazar la función agregarNuevoCampo
-agregarNuevoCampo() {
+  agregarNuevoCampo() {
     const container = document.getElementById("camposDinamicosContainer");
-    
-    // Crear el nuevo elemento de campo
-    const newField = document.createElement('div');
-    newField.className = 'row mb-3 align-items-center form-campo-row nuevo-campo';
-    newField.innerHTML = `
+    const nombreInput = document.getElementById("newCampoNombre");
+    const tipoInput = document.getElementById("newCampoTipo");
+    const sensibleInput = document.getElementById("newCampoSensible");
+
+    const nombre = nombreInput.value.trim();
+    const tipo = tipoInput.value;
+    const sensible = sensibleInput.checked;
+
+    if (!nombre) {
+      alert("El nombre del campo no puede estar vacío.");
+      return;
+    }
+
+    const newItem = {
+      campo: nombre,
+      tipo: tipo,
+      valor: "",
+      sensible: sensible,
+    };
+    const newIndex = container.children.length; // Usar el largo actual como índice temporal
+
+    const newRow = document.createElement("div");
+    newRow.classList.add(
+      "row",
+      "mb-3",
+      "align-items-center",
+      "form-campo-row",
+      "bg-light",
+      "p-2",
+      "rounded"
+    );
+    newRow.dataset.index = newIndex;
+    newRow.dataset.sensible = sensible;
+    newRow.dataset.tipo = tipo; // Guardar el tipo en la fila para el guardado
+
+    newRow.innerHTML = `
         <div class="col-4">
-            <label class="form-label small text-muted">string</label>
-            <input type="text" class="form-control form-control-sm input-campo-nombre" value="" required placeholder="Nombre del campo">
+            <label class="form-label small text-muted">${newItem.tipo} ${
+      newItem.sensible ? "🔑" : ""
+    }</label>
+            <input type="text" class="form-control form-control-sm input-campo-nombre" value="${
+              newItem.campo
+            }" required placeholder="Nombre del campo">
         </div>
         <div class="col-6">
-            <label class="form-label">Valor</label>
-            <input type="text" class="form-control" value="" id="mod-campo-nuevo" required>
+            <label for="mod-campo-${newIndex}" class="form-label">Valor</label>
+            ${this.renderizarTipoInput(newItem).replace(
+              "required>",
+              `id="mod-campo-${newIndex}" required>`
+            )}
         </div>
         <div class="col-2 text-end">
-            <button type="button" class="btn btn-sm btn-danger btn-eliminar-campo" title="Eliminar campo">
+            <button type="button" class="btn btn-sm btn-danger btn-eliminar-campo" data-index="${newIndex}" title="Eliminar campo">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
     `;
-    
-    // Añadir el campo al contenedor
-    container.appendChild(newField);
-    
-    // CRÍTICO: Adjuntar el event listener de eliminación al botón del nuevo campo
-    newField.querySelector('.btn-eliminar-campo').addEventListener('click', (e) => this.eliminarCampo(newField));
 
-    // Opcional: enfocar el nuevo campo para mejor UX
-    newField.querySelector('.input-campo-nombre').focus();
-},
+    container.appendChild(newRow);
+    nombreInput.value = "";
+    tipoInput.value = "string";
+    sensibleInput.checked = false;
+    document.getElementById("addCampoForm").classList.add("d-none");
+    document.getElementById("btnAddCampo").style.display = "inline-block";
+
+    newRow
+      .querySelector(".btn-eliminar-campo")
+      .addEventListener("click", (e) => this.eliminarCampo(newRow));
+  },
 
   eliminarCampo(rowElement) {
     if (
@@ -380,124 +475,128 @@ agregarNuevoCampo() {
   },
 
   // --- Lógica de Guardado ---
-// Función para recoger los datos del formulario (debe iterar sobre el DOM)
-obtenerDatosFormulario() {
+  obtenerDatosFormulario() {
+    const container = document.getElementById("camposDinamicosContainer");
     const nuevosDatosBasicos = [];
-    
-    // Iterar sobre todos los elementos visibles en el DOM
-    document.querySelectorAll('#camposDinamicosContainer .form-campo-row').forEach(row => {
-        const campoInput = row.querySelector('.input-campo-nombre').value.trim();
-        const valorInput = row.querySelector('.form-control:not(.input-campo-nombre)');
-        const tipoRow = row.querySelector('.form-label.small.text-muted')?.textContent.trim().split(' ')[0] || 'string';
-        const sensibleCheckbox = row.querySelector('.form-check-input');
 
-        if (!campoInput || !valorInput) return; // Saltar si faltan datos esenciales
+    container.querySelectorAll(".form-campo-row").forEach((row) => {
+      const nombreInput = row.querySelector(".input-campo-nombre");
+      const valorInput = row.querySelector(
+        "input:not(.input-campo-nombre), select, textarea"
+      );
 
-        let valor;
-        let tipo = tipoRow;
-        
-        // Lógica de recolección de valor basada en el tipo de input
-        if (valorInput.type === 'checkbox') {
-            valor = valorInput.checked;
-            tipo = 'boolean';
-        } else {
-            valor = valorInput.value;
-        }
+      if (!nombreInput || !valorInput) return; // Saltar si el campo está incompleto
 
-        nuevosDatosBasicos.push({
-            campo: campoInput,
-            tipo: tipo,
-            valor: String(valor),
-            sensible: sensibleCheckbox ? sensibleCheckbox.checked : false,
-        });
+      let valor, tipo, sensible;
+
+      tipo = row.dataset.tipo; // Usar el tipo guardado en la fila
+      sensible = row.dataset.sensible === "true";
+
+      if (tipo === "boolean" && valorInput.type === "checkbox") {
+        valor = valorInput.checked ? "true" : "false";
+      } else {
+        valor = valorInput.value;
+      }
+
+      nuevosDatosBasicos.push({
+        campo: nombreInput.value.trim(),
+        tipo: tipo,
+        valor: valor,
+        sensible: sensible,
+      });
     });
 
     // Retornar el objeto parcial para la combinación final
     return { "datos-basicos": nuevosDatosBasicos };
-},
+  },
 
-async manejarModificacion(event) {
-  event.preventDefault();
+  async manejarModificacion(event) {
+    event.preventDefault();
 
-  const feedback = document.getElementById("feedbackModificacionBasicos");
+    const feedback = document.getElementById("feedbackModificacionBasicos");
 
-  try {
-    feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
-
-    // 1. Obtener los datos modificados de ambas pestañas
-    const datosBasicosMod = this.obtenerDatosFormulario()["datos-basicos"];
-    const accesosMod = accesos.isModifying
-      ? accesos.obtenerDatosFormulario().accesos
-      : this.datosCompletos.accesos;
-
-    const datosFinales = {
-      "datos-basicos": datosBasicosMod,
-      accesos: accesosMod,
-    };
-
-    // 2. Guardar en GitHub (CORREGIDO)
-    await this.guardarEnGitHub(datosFinales); // ← ESTA ES LA CORRECCIÓN PRINCIPAL
-
-    feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
-
-    // 3. Actualizar datos locales y recargar
-    this.datosCompletos = datosFinales;
-    setTimeout(() => {
-      location.reload();
-    }, 2000);
-  } catch (error) {
-    console.error("Error modificando datos:", error);
-    feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
-  }
-},
-  // Función para guardar en GitHub (Corregida con Base64)
-async guardarEnGitHub(datosModificados) {
-  try {
-    const claveAcceso = sessionStorage.getItem("claveAcceso");
-    if (!claveAcceso) {
-      throw new Error("No hay clave de acceso");
-    }
-
-    const datosEncriptadosStr = await seguridad.encriptar(
-      datosModificados,
-      claveAcceso
-    );
-    // Base64 para la API de GitHub (doble codificación)
-    const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
-
-    const nombre =
-      datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
-        ?.valor || "Usuario";
-    const commitMessage = `Actualizar datos encriptados de ${nombre}`;
-
-    // NUEVO: Intentar obtener SHA del archivo existente
-    let sha = null;
     try {
-      const existingFile = await github._fetchProxy('getFile', CONFIG.DATOS_ENCRYPTED_PATH, {}, false);
-      sha = existingFile.sha;
-      console.log('✅ SHA del archivo existente:', sha);
+      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
+
+      // 1. Obtener los datos modificados de ambas pestañas
+      const datosBasicosMod = this.obtenerDatosFormulario()["datos-basicos"];
+      const accesosMod = accesos.isModifying
+        ? accesos.obtenerDatosFormulario().accesos
+        : this.datosCompletos.accesos;
+
+      const datosFinales = {
+        "datos-basicos": datosBasicosMod,
+        accesos: accesosMod,
+      };
+
+      // 2. Guardar en GitHub (CORREGIDO)
+      await this.guardarEnGitHub(datosFinales); // ← ESTA ES LA CORRECCIÓN PRINCIPAL
+
+      feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
+
+      // 3. Actualizar datos locales y recargar
+      this.datosCompletos = datosFinales;
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
     } catch (error) {
-      console.log('📄 Archivo encriptado no existe, se creará nuevo');
+      console.error("Error modificando datos:", error);
+      feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
     }
+  },
+  // Función para guardar en GitHub (Corregida con Base64)
+  async guardarEnGitHub(datosModificados) {
+    try {
+      const claveAcceso = sessionStorage.getItem("claveAcceso");
+      if (!claveAcceso) {
+        throw new Error("No hay clave de acceso");
+      }
 
-    await github.guardarArchivo(
-      CONFIG.DATOS_ENCRYPTED_PATH,
-      datosEncriptadosBase64ForAPI,
-      commitMessage,
-      sha // NUEVO: Pasar el SHA si existe
-    );
-  } catch (error) {
-    console.error("Error en guardarEnGitHub:", error);
-    throw error;
-  }
-},
+      const datosEncriptadosStr = await seguridad.encriptar(
+        datosModificados,
+        claveAcceso
+      );
+      // Base64 para la API de GitHub (doble codificación)
+      const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
 
-inicializar() {
-  try {
-    this.cargarDatos();
-  } catch (error) {
-    console.error("Error en inicialización:", error);
-    this.mostrarError("Error al inicializar los datos básicos");
-  }
-},
+      const nombre =
+        datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
+          ?.valor || "Usuario";
+      const commitMessage = `Actualizar datos encriptados de ${nombre}`;
+
+      // NUEVO: Intentar obtener SHA del archivo existente
+      let sha = null;
+      try {
+        const existingFile = await github._fetchProxy(
+          "getFile",
+          CONFIG.DATOS_ENCRYPTED_PATH,
+          {},
+          false
+        );
+        sha = existingFile.sha;
+        console.log("✅ SHA del archivo existente:", sha);
+      } catch (error) {
+        console.log("📄 Archivo encriptado no existe, se creará nuevo");
+      }
+
+      await github.guardarArchivo(
+        CONFIG.DATOS_ENCRYPTED_PATH,
+        datosEncriptadosBase64ForAPI,
+        commitMessage,
+        sha // NUEVO: Pasar el SHA si existe
+      );
+    } catch (error) {
+      console.error("Error en guardarEnGitHub:", error);
+      throw error;
+    }
+  },
+
+  inicializar() {
+    try {
+      this.cargarDatos();
+    } catch (error) {
+      console.error("Error en inicialización:", error);
+      this.mostrarError("Error al inicializar los datos básicos");
+    }
+  },
 };
