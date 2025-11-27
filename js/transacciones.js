@@ -48,7 +48,7 @@ const transacciones = {
   },
 
   convertirBsADolares(montoBs, fecha) {
-    return montoBs / obtenerTasaCambio(fecha);
+    return montoBs / this.obtenerTasaCambio(fecha);
   },
 
   // --- Carga y Renderizado ---
