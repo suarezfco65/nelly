@@ -12,6 +12,21 @@ const accesos = {
     await this.cargarDatos();
   },
 
+  // --- Helpers de Ordenamiento ---
+  ordenarPorSistema(accesosList) {
+    if (!accesosList || accesosList.length === 0) return [];
+
+    // Crea una copia para no modificar el array original en memoria si no es necesario
+    return [...accesosList].sort((a, b) => {
+      const sistemaA = a.sistema.toUpperCase(); // Ignorar mayúsculas/minúsculas
+      const sistemaB = b.sistema.toUpperCase();
+
+      if (sistemaA < sistemaB) return -1;
+      if (sistemaA > sistemaB) return 1;
+      return 0; // Sistemas iguales
+    });
+  },
+
   async cargarDatos() {
     try {
       const claveAcceso = sessionStorage.getItem("claveAcceso");
@@ -65,7 +80,9 @@ const accesos = {
       }
 
       this.datosAccesos = datosRecuperados;
-      this.renderizarAccesos(this.datosAccesos);
+      // APLICAR ORDENAMIENTO AQUÍ
+      const accesosOrdenados = this.ordenarPorSistema(this.datosAccesos);
+      this.renderizarAccesos(accesosOrdenados);
     } catch (error) {
       this.container.innerHTML = `<div class="alert alert-danger">Error cargando accesos: ${error.message}</div>`;
     }
@@ -235,7 +252,9 @@ const accesos = {
   // --- Renderizado (Modo Edición) ---
   renderizarFormularioModificacion(accesosList) {
     this.isModifying = true;
-    this.datosAccesos = accesosList;
+    // APLICAR ORDENAMIENTO AQUÍ
+    const accesosOrdenados = this.ordenarPorSistema(accesosList);
+    this.datosAccesos = accesosOrdenados; // Actualizar la data en memoria con la versión ordenada
 
     const tableRows = accesosList
       .map(
