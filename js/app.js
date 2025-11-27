@@ -1,4 +1,3 @@
-
 // Se definen con 'let' para poder asignarles la instancia de Modal más tarde
 let docModalInstance;
 let compraModalInstance;
@@ -62,24 +61,20 @@ function limpiarModales() {
 
 // Inicializar la aplicación
 function inicializarApp() {
-  // verificación de acceso al iniciar
   if (!verificarAcceso()) return;
 
-  // CORRECCIÓN DEL ERROR: Inicializar modales DENTRO de inicializarApp
-  // para asegurar que los elementos DOM estén disponibles.
+  // Inicializar componentes globales
   if (elements.docModal && elements.compraModal) {
-    // Las variables globales 'let' se asignan aquí.
     docModalInstance = new bootstrap.Modal(elements.docModal);
     compraModalInstance = new bootstrap.Modal(elements.compraModal);
-  } else {
-    console.error(
-      "No se pudieron inicializar los modales de Bootstrap: Elementos no encontrados."
-    );
   }
 
   inicializarEventosGlobales();
-  // El módulo datosBasicos se encarga de cargar y delegar a accesos.js
-  datosBasicos.inicializar();
+
+  // INICIALIZACIÓN PARALELA E INDEPENDIENTE
+  datosBasicos.inicializar(); // Carga datos-basicos-encriptado.json
+  accesos.inicializar(); // Carga accesos-encriptado.json (o busca en el viejo si falla)
+
   documentos.inicializar();
   compras.inicializar();
   transacciones.inicializar();

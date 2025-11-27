@@ -2,8 +2,9 @@
 
 const datosBasicos = {
   // Datos actuales y estado
-  datosCompletos: null, // Toda la data: { "datos-basicos": [...], "accesos": [...] }
+  datosLocales: null, // Almacena solo la lista de datos básicos
   isModifying: false,
+  tokenActual: null, // Almacenamiento temporal del token validado
 
   // --- Carga de Datos ---
   async cargarDatos() {
@@ -14,52 +15,67 @@ const datosBasicos = {
         return;
       }
 
-      let datos;
+      let datosFull;
+      let listaDatosBasicos = [];
+
       try {
         const responseEncriptado = await fetch(CONFIG.DATOS_ENCRYPTED_PATH);
+
         if (responseEncriptado.ok) {
           const datosEncriptados = await responseEncriptado.text();
-          datos = await seguridad.desencriptar(datosEncriptados, claveAcceso);
-          // Verificar que la nueva estructura exista (para manejar la migración en caso de un archivo antiguo)
-          if (!datos || !datos["datos-basicos"] || !datos.accesos) {
-            datos = this.migrarEstructura(datos);
+          datosFull = await seguridad.desencriptar(
+            datosEncriptados,
+            claveAcceso
+          );
+
+          // Lógica de separación:
+          // Si el archivo contiene la estructura antigua (combinada), extraemos solo datos-basicos.
+          // Si es la nueva estructura separada, tomamos datos-basicos directamente.
+          if (datosFull["datos-basicos"]) {
+            listaDatosBasicos = datosFull["datos-basicos"];
+          } else {
+            // Si por alguna razón la estructura no coincide, intentamos migrar
+            const migrado = this.migrarEstructura(datosFull);
+            listaDatosBasicos = migrado["datos-basicos"];
           }
         } else {
-          // Cargar la plantilla inicial si no hay encriptado
+          // Cargar la plantilla inicial si no hay encriptado (Primera vez o error de red)
           const responseInicial = await fetch(CONFIG.JSON_URL);
           if (!responseInicial.ok) {
             throw new Error("No se pudo cargar la plantilla inicial de datos.");
           }
           const datosLegacy = await responseInicial.json();
-          datos = this.migrarEstructura(datosLegacy);
+          const migrado = this.migrarEstructura(datosLegacy);
+          listaDatosBasicos = migrado["datos-basicos"];
         }
       } catch (errorCarga) {
-        // En caso de error de desencriptación, intentar cargar datos antiguos para migrar
+        // Manejo específico de error de clave
         if (
           errorCarga.message.includes("Clave incorrecta") ||
           errorCarga.message.includes("desencriptar")
         ) {
-          throw errorCarga; // Re-lanzar para que se maneje como clave incorrecta
+          throw errorCarga;
         }
+
+        console.warn(
+          "Error cargando encriptado, usando fallback JSON:",
+          errorCarga
+        );
         const responseInicial = await fetch(CONFIG.JSON_URL);
-        if (!responseInicial.ok) {
-          throw new Error("No se pudo cargar la plantilla inicial de datos.");
-        }
         const datosLegacy = await responseInicial.json();
-        datos = this.migrarEstructura(datosLegacy);
+        const migrado = this.migrarEstructura(datosLegacy);
+        listaDatosBasicos = migrado["datos-basicos"];
       }
 
-      this.datosCompletos = datos;
+      this.datosLocales = listaDatosBasicos;
 
-      // Mostrar datos de la pestaña actual
-      this.renderizarDatosBasicos(datos["datos-basicos"]);
+      // Mostrar datos (Solo renderizamos lo nuestro)
+      this.renderizarDatosBasicos(this.datosLocales);
 
-      // Inicializar la pestaña de Accesos (asumido global)
-      if (typeof accesos !== "undefined" && accesos.inicializar) {
-        accesos.inicializar(datos.accesos);
-      }
+      // NOTA: Ya no llamamos a accesos.inicializar() aquí.
+      // app.js se encarga de iniciar ambos módulos por separado.
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      console.error("Error cargando datos básicos:", error);
 
       if (
         error.message.includes("Clave incorrecta") ||
@@ -81,14 +97,12 @@ const datosBasicos = {
 
   // --- Migración de Estructura Antigua a Nueva ---
   migrarEstructura(datosLegacy) {
-    // Validar datosLegacy
     if (!datosLegacy) {
       datosLegacy = {};
     }
-    // Intenta extraer los datos del formato antiguo y convertirlos al nuevo
-    const preguntas = datosLegacy.preguntasSeguridad || [];
-    const accesosAntiguos = datosLegacy.accesos || {};
 
+    // Solo nos importa construir la estructura de datos-basicos
+    // Ignoramos accesos aquí, ya que accesos.js hará su propia migración si es necesario
     const newStructure = {
       "datos-basicos": [
         {
@@ -110,39 +124,8 @@ const datosBasicos = {
           sensible: false,
         },
       ],
-      accesos: [
-        {
-          sistema: "Patria",
-          url: "https://www.patria.org.ve/",
-          usuario: accesosAntiguos.patria?.usuario || datosLegacy.cedula || "",
-          clave: accesosAntiguos.patria?.contrasena || "",
-          observaciones: "",
-        },
-        {
-          sistema: "Bancaribe",
-          url: "https://www.bancaribe.com.ve/",
-          usuario: accesosAntiguos.bancaribe?.usuario || "",
-          clave: accesosAntiguos.bancaribe?.contrasena || "",
-          observaciones:
-            preguntas.length > 0
-              ? "Respuestas de Seguridad migradas: " +
-                preguntas
-                  .map((p) => p.pregunta + ": " + p.respuesta)
-                  .join(" / ")
-              : "",
-        },
-        {
-          sistema: "Mercantil",
-          url: "https://www.mercantilbanco.com/personas",
-          usuario: accesosAntiguos.mercantil?.usuario || "",
-          clave: accesosAntiguos.mercantil?.contrasena || "",
-          observaciones: "",
-        },
-      ],
+      // Accesos eliminados de este objeto retornado
     };
-    console.log(
-      "Datos migrados a la nueva estructura. Las preguntas de seguridad se movieron a Observaciones de Bancaribe."
-    );
     return newStructure;
   },
 
@@ -160,13 +143,11 @@ const datosBasicos = {
   renderizarValor(item) {
     let valor = item.valor;
     if (item.sensible && !this.isModifying) {
-      // Si es sensible y no estamos modificando, enmascarar
       return `<span class="masked sensitive" data-value="${valor}">${"•".repeat(
         valor.length
       )}</span>`;
     }
 
-    // Mostrar formato correspondiente al tipo
     switch (item.tipo) {
       case "fecha":
         return valor ? new Date(valor).toLocaleDateString() : "N/A";
@@ -176,8 +157,7 @@ const datosBasicos = {
         return valor === "true" || valor === true
           ? '<span class="badge bg-success">Sí</span>'
           : '<span class="badge bg-danger">No</span>';
-      case "texto": // <-- CAMBIO 1: Nuevo caso para 'texto'
-        // Mostrar texto multilinea con saltos de línea (usando <br> para HTML)
+      case "texto":
         return valor
           ? `<span style="white-space: pre-wrap;">${valor}</span>`
           : "";
@@ -207,7 +187,7 @@ const datosBasicos = {
       </div>
       <div class="mt-4">
         <button id="btnModificarDatos" class="btn btn-warning">
-          <i class="bi bi-pencil-square"></i> Modificar Datos
+          <i class="bi bi-pencil-square"></i> Modificar Datos Básicos
         </button>
       </div>
       <div id="feedbackModificacionBasicos" class="mt-3"></div>
@@ -235,11 +215,10 @@ const datosBasicos = {
           item.valor === "true" || item.valor === true || item.valor === 1
             ? "checked"
             : "";
-        // El valor real debe ser capturado del checked state
         return `<div class="form-check form-switch"><input type="checkbox" id="${id}" ${baseAttr} ${checked} class="form-check-input input-boolean" role="switch"></div>`;
-      case "texto": // <-- CAMBIO 2: Nuevo caso para 'texto' (textarea)
+      case "texto":
         return `<textarea id="${id}" rows="4" ${baseAttr} required>${item.valor}</textarea>`;
-      default: // string
+      default:
         return `<input type="text" id="${id}" value="${item.valor}" ${baseAttr} required>`;
     }
   },
@@ -249,33 +228,26 @@ const datosBasicos = {
     const container = document.getElementById("camposDinamicosContainer");
     if (!container) return;
 
-    // Aquí se integraría una librería como SortableJS o la lógica nativa.
-    // Ejemplo usando la clase 'sortable' para la lógica nativa o de librería:
     container.classList.add("sortable-container");
 
-    // **NOTA IMPORTANTE:** Para una implementación funcional, necesitarás incluir
-    // la librería SortableJS y usar su inicializador aquí:
-    new Sortable(container, {
-      animation: 150,
-      ghostClass: "blue-background-class", // Clase para el elemento fantasma
-      handle: ".form-campo-row", // Permite arrastrar toda la fila
-      onEnd: function (evt) {
-        console.log(
-          "Campo movido de la posición " + evt.oldIndex + " a " + evt.newIndex
-        );
-        // La estructura DOM se actualiza automáticamente; no se necesita más lógica aquí.
-      },
-    });
-
-    // Si no usas una librería, aquí debería ir la lógica de eventos dragstart, dragover, drop, etc.
-    console.log(
-      "Funcionalidad Drag and Drop inicializada en #camposDinamicosContainer."
-    );
+    // Verificar si Sortable está disponible
+    if (typeof Sortable !== "undefined") {
+      new Sortable(container, {
+        animation: 150,
+        ghostClass: "blue-background-class",
+        handle: ".form-campo-row",
+        onEnd: function (evt) {
+          console.log("Campo reordenado");
+        },
+      });
+    } else {
+      console.warn("Librería SortableJS no cargada.");
+    }
   },
 
   renderizarFormularioModificacion() {
-    this.isModifying = true; // Activar flag de modificación
-    const datos = this.datosCompletos["datos-basicos"];
+    this.isModifying = true;
+    const datos = this.datosLocales;
 
     const formularioCampos = datos
       .map(
@@ -354,7 +326,7 @@ const datosBasicos = {
             </div>
             <div class="mt-4">
               <button type="submit" class="btn btn-success">
-                <i class="bi bi-check-circle"></i> Guardar Cambios
+                <i class="bi bi-check-circle"></i> Guardar Solo Datos Básicos
               </button>
               <button type="button" id="btnCancelarModificacionBasicos" class="btn btn-secondary">
                 <i class="bi bi-x-circle"></i> Cancelar
@@ -374,20 +346,21 @@ const datosBasicos = {
       .addEventListener("submit", (e) => {
         this.manejarModificacion(e);
       });
+
     document
       .getElementById("btnCancelarModificacionBasicos")
       .addEventListener("click", () => {
-        this.tokenActual = null; // Limpiar token
-        this.renderizarDatosBasicos(this.datosCompletos["datos-basicos"]); // Volver al modo lectura
-        // Asegurar que accesos.js también se restaure
-        if (typeof accesos !== "undefined" && accesos.renderizarAccesos) {
-          accesos.renderizarAccesos(this.datosCompletos.accesos);
-        }
+        // Al cancelar, volvemos a renderizar lo que teníamos en memoria localmente
+        this.tokenActual = null;
+        this.renderizarDatosBasicos(this.datosLocales);
+        // NO llamamos a accesos.renderizar... aquí. Son independientes.
       });
+
     document.getElementById("btnAddCampo").addEventListener("click", (e) => {
       e.target.style.display = "none";
       document.getElementById("addCampoForm").classList.remove("d-none");
     });
+
     document
       .getElementById("btnConfirmAddCampo")
       .addEventListener("click", () => this.agregarNuevoCampo());
@@ -400,7 +373,6 @@ const datosBasicos = {
         );
       });
 
-    // CAMBIO 4: Inicializar la funcionalidad de arrastre
     this.inicializarDragAndDrop();
   },
 
@@ -411,20 +383,15 @@ const datosBasicos = {
     try {
       feedback.innerHTML = `<div class="alert alert-info py-2"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Verificando token...</div>`;
 
+      // Verificamos el token (esto guardará el token en sesión si el usuario lo ingresa)
       await github.verificarToken();
 
-      // Activar modo modificación en ambas pestañas
+      // Solo activamos la modificación de ESTE módulo
       this.renderizarFormularioModificacion();
-      if (
-        typeof accesos !== "undefined" &&
-        accesos.renderizarFormularioModificacion
-      ) {
-        accesos.renderizarFormularioModificacion(this.datosCompletos.accesos);
-      }
 
       feedback.innerHTML = `<div class="alert alert-success py-2">Token verificado ✓</div>`;
       setTimeout(() => {
-        feedback.innerHTML = "";
+        if (feedback) feedback.innerHTML = "";
       }, 1000);
     } catch (error) {
       feedback.innerHTML = `<div class="alert alert-danger py-2">Error: ${error.message}</div>`;
@@ -453,7 +420,7 @@ const datosBasicos = {
       valor: "",
       sensible: sensible,
     };
-    const newIndex = container.children.length; // Usar el largo actual como índice temporal
+    const newIndex = container.children.length;
 
     const newRow = document.createElement("div");
     newRow.classList.add(
@@ -467,7 +434,7 @@ const datosBasicos = {
     );
     newRow.dataset.index = newIndex;
     newRow.dataset.sensible = sensible;
-    newRow.dataset.tipo = tipo; // Guardar el tipo en la fila para el guardado
+    newRow.dataset.tipo = tipo;
 
     newRow.innerHTML = `
         <div class="col-4">
@@ -525,11 +492,11 @@ const datosBasicos = {
         "input:not(.input-campo-nombre), select, textarea"
       );
 
-      if (!nombreInput || !valorInput) return; // Saltar si el campo está incompleto
+      if (!nombreInput || !valorInput) return;
 
       let valor, tipo, sensible;
 
-      tipo = row.dataset.tipo; // Usar el tipo guardado en la fila
+      tipo = row.dataset.tipo;
       sensible = row.dataset.sensible === "true";
 
       if (tipo === "boolean" && valorInput.type === "checkbox") {
@@ -546,7 +513,7 @@ const datosBasicos = {
       });
     });
 
-    // Retornar el objeto parcial para la combinación final
+    // Retornar la estructura estricta para el JSON independiente
     return { "datos-basicos": nuevosDatosBasicos };
   },
 
@@ -556,28 +523,19 @@ const datosBasicos = {
     const feedback = document.getElementById("feedbackModificacionBasicos");
 
     try {
-      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando cambios en GitHub...</div>`;
+      feedback.innerHTML = `<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Guardando SOLO Datos Básicos...</div>`;
 
-      // 1. Obtener los datos modificados de ambas pestañas
-      const datosBasicosMod = this.obtenerDatosFormulario()["datos-basicos"];
-      const accesosMod = accesos.isModifying
-        ? accesos.obtenerDatosFormulario().accesos
-        : this.datosCompletos.accesos;
+      // 1. Obtener SOLO los datos básicos del formulario actual
+      // IMPORTANTE: Ya no consultamos a 'accesos' para nada.
+      const datosParaGuardar = this.obtenerDatosFormulario();
 
-      const datosFinales = {
-        "datos-basicos": datosBasicosMod,
-        accesos: accesosMod,
-      };
+      // 2. Guardar en GitHub (Sobrescribirá datos-basicos-encriptado.json solo con datos básicos)
+      await this.guardarEnGitHub(datosParaGuardar);
 
-      console.log(datosFinales);
-
-      // 2. Guardar en GitHub (CORREGIDO)
-      await this.guardarEnGitHub(datosFinales); // ← ESTA ES LA CORRECCIÓN PRINCIPAL
-
-      feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos actualizados exitosamente</strong><br><small>El cambio ha sido enviado a GitHub. La página se recargará en 2 segundos...</small></div>`;
+      feedback.innerHTML = `<div class="alert alert-success"><strong>✓ Datos básicos actualizados</strong><br><small>Recargando...</small></div>`;
 
       // 3. Actualizar datos locales y recargar
-      this.datosCompletos = datosFinales;
+      this.datosLocales = datosParaGuardar["datos-basicos"];
       setTimeout(() => {
         location.reload();
       }, 2000);
@@ -586,7 +544,7 @@ const datosBasicos = {
       feedback.innerHTML = `<div class="alert alert-danger"><strong>Error al guardar:</strong> ${error.message}<br><small>Verifique la conexión y permisos</small></div>`;
     }
   },
-  // Función para guardar en GitHub (Corregida con Base64)
+
   async guardarEnGitHub(datosModificados) {
     try {
       const claveAcceso = sessionStorage.getItem("claveAcceso");
@@ -594,19 +552,20 @@ const datosBasicos = {
         throw new Error("No hay clave de acceso");
       }
 
+      // Encriptar solo el objeto de datos básicos
       const datosEncriptadosStr = await seguridad.encriptar(
         datosModificados,
         claveAcceso
       );
-      // Base64 para la API de GitHub (doble codificación)
+
       const datosEncriptadosBase64ForAPI = btoa(datosEncriptadosStr);
 
       const nombre =
         datosModificados["datos-basicos"].find((d) => d.campo === "Nombre")
           ?.valor || "Usuario";
-      const commitMessage = `Actualizar datos encriptados de ${nombre}`;
+      const commitMessage = `Actualizar datos básicos de ${nombre}`;
 
-      // NUEVO: Intentar obtener SHA del archivo existente
+      // Intentar obtener SHA del archivo existente para hacer un update limpio
       let sha = null;
       try {
         const existingFile = await github._fetchProxy(
@@ -616,16 +575,17 @@ const datosBasicos = {
           false
         );
         sha = existingFile.sha;
-        console.log("✅ SHA del archivo existente:", sha);
       } catch (error) {
-        console.log("📄 Archivo encriptado no existe, se creará nuevo");
+        console.log(
+          "Archivo encriptado no existe o no se pudo obtener SHA, se creará uno nuevo."
+        );
       }
 
       await github.guardarArchivo(
         CONFIG.DATOS_ENCRYPTED_PATH,
         datosEncriptadosBase64ForAPI,
         commitMessage,
-        sha // NUEVO: Pasar el SHA si existe
+        sha
       );
     } catch (error) {
       console.error("Error en guardarEnGitHub:", error);
