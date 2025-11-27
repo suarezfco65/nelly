@@ -41,7 +41,7 @@ const transacciones = {
   obtenerTasaCambio(fecha) {
     return (
       this.tasasDolar.find((t) => t.fecha === fecha)?.tasa ||
-      this.tasasDolar[this.tasasDolar.findIndex((t) => t.fecha > fecha) + 1]
+      this.tasasDolar[this.tasasDolar.findIndex((t) => t.fecha < fecha)]
         ?.tasa ||
       this.tasasDolar[0]?.tasa
     );
