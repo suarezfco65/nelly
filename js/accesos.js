@@ -256,7 +256,7 @@ const accesos = {
     const accesosOrdenados = this.ordenarPorSistema(accesosList);
     this.datosAccesos = accesosOrdenados; // Actualizar la data en memoria con la versión ordenada
 
-    const tableRows = accesosList
+    const tableRows = accesosOrdenados
       .map(
         (item, index) => `
       <tr data-index="${index}" class="fila-acceso-mod">
