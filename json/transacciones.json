@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-12-03",
+      "descripcion": "Ingreso Bancaribe",
+      "ingreso": 9500,
+      "egreso": 0,
+      "saldo": 9808,
+      "timestamp": 1764771747777
+    },
+    {
       "fecha": "2025-11-30",
       "descripcion": "Envio dinero Ana Maria",
       "ingreso": 0,
       "egreso": 2232,
       "saldo": 308,
-      "timestamp": 1764771629159
+      "timestamp": 1764771629159,
+      "monto": -2232
     },
     {
       "fecha": "2025-11-23",
