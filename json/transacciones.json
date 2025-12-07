@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-12-07",
+      "descripcion": "Compra zapatos",
+      "ingreso": 0,
+      "egreso": 7800,
+      "saldo": 2008,
+      "timestamp": 1765145740237
+    },
+    {
       "fecha": "2025-12-03",
       "descripcion": "Ingreso Bancaribe",
       "ingreso": 9500,
       "egreso": 0,
       "saldo": 9808,
-      "timestamp": 1764771747777
+      "timestamp": 1764771747777,
+      "monto": 9500
     },
     {
       "fecha": "2025-11-30",
