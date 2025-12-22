@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-12-22",
+      "descripcion": "Compra tienda (negrita)",
+      "ingreso": 0,
+      "egreso": 7200,
+      "saldo": 88738,
+      "timestamp": 1766433239693
+    },
+    {
       "fecha": "2025-12-19",
       "descripcion": "Ingreso Bancaribe (Parte bono patria)",
       "ingreso": 78800,
       "egreso": 0,
       "saldo": 95938,
-      "timestamp": 1766144583479
+      "timestamp": 1766144583479,
+      "monto": 78800
     },
     {
       "fecha": "2025-12-17",
