@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-12-23",
+      "descripcion": "Envio de compra (negrita)",
+      "ingreso": 0,
+      "egreso": 1430,
+      "saldo": 87308,
+      "timestamp": 1766504443490
+    },
+    {
       "fecha": "2025-12-22",
       "descripcion": "Compra tienda (negrita)",
       "ingreso": 0,
       "egreso": 7200,
       "saldo": 88738,
-      "timestamp": 1766433239693
+      "timestamp": 1766433239693,
+      "monto": -7200
     },
     {
       "fecha": "2025-12-19",
