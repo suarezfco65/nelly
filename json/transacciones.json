@@ -2,11 +2,20 @@
   "transacciones": [
     {
       "fecha": "2025-12-23",
+      "descripcion": "Compra Farmatodo",
+      "ingreso": 0,
+      "egreso": 32583.81,
+      "saldo": 54724.19,
+      "timestamp": 1766504717145
+    },
+    {
+      "fecha": "2025-12-23",
       "descripcion": "Envio de compra (negrita)",
       "ingreso": 0,
       "egreso": 1430,
       "saldo": 87308,
-      "timestamp": 1766504443490
+      "timestamp": 1766504443490,
+      "monto": -1430
     },
     {
       "fecha": "2025-12-22",
