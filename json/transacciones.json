@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-12-26",
+      "descripcion": "Pago a Rosneidi Rendon",
+      "ingreso": 0,
+      "egreso": 6000,
+      "saldo": 48724.19,
+      "timestamp": 1766767313567
+    },
+    {
       "fecha": "2025-12-23",
       "descripcion": "Compra Farmatodo",
       "ingreso": 0,
       "egreso": 32583.81,
       "saldo": 54724.19,
-      "timestamp": 1766504717145
+      "timestamp": 1766504717145,
+      "monto": -32583.81
     },
     {
       "fecha": "2025-12-23",
