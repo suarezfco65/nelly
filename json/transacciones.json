@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2025-12-31",
+      "descripcion": "Banco Caribe",
+      "ingreso": 11400,
+      "egreso": 0,
+      "saldo": 60124.19,
+      "timestamp": 1767186492793
+    },
+    {
       "fecha": "2025-12-26",
       "descripcion": "Pago a Rosneidi Rendon",
       "ingreso": 0,
       "egreso": 6000,
       "saldo": 48724.19,
-      "timestamp": 1766767313567
+      "timestamp": 1766767313567,
+      "monto": -6000
     },
     {
       "fecha": "2025-12-23",
