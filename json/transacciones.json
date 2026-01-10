@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2026-01-10",
+      "descripcion": "Compra pan rosneidi",
+      "ingreso": 0,
+      "egreso": 3400,
+      "saldo": 56724.19,
+      "timestamp": 1768064217857
+    },
+    {
       "fecha": "2025-12-31",
       "descripcion": "Banco Caribe",
       "ingreso": 11400,
       "egreso": 0,
       "saldo": 60124.19,
-      "timestamp": 1767186492793
+      "timestamp": 1767186492793,
+      "monto": 11400
     },
     {
       "fecha": "2025-12-26",
