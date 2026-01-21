@@ -2,11 +2,20 @@
   "transacciones": [
     {
       "fecha": "2026-01-21",
+      "descripcion": "Luis Paniales",
+      "ingreso": 0,
+      "egreso": 35829.04,
+      "saldo": 58695.15,
+      "timestamp": 1769018527706
+    },
+    {
+      "fecha": "2026-01-21",
       "descripcion": "Bancaribe Bono",
       "ingreso": 37800,
       "egreso": 0,
       "saldo": 94524.19,
-      "timestamp": 1769018241402
+      "timestamp": 1769018241402,
+      "monto": 37800
     },
     {
       "fecha": "2026-01-10",
