@@ -2,11 +2,20 @@
   "transacciones": [
     {
       "fecha": "2026-01-21",
+      "descripcion": "dif pago paniales",
+      "ingreso": 0,
+      "egreso": 286,
+      "saldo": 58409.15,
+      "timestamp": 1769020591190
+    },
+    {
+      "fecha": "2026-01-21",
       "descripcion": "Luis Paniales",
       "ingreso": 0,
       "egreso": 35829.04,
       "saldo": 58695.15,
-      "timestamp": 1769018527706
+      "timestamp": 1769018527706,
+      "monto": -35829.04
     },
     {
       "fecha": "2026-01-21",
