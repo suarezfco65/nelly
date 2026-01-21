@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2026-01-21",
+      "descripcion": "Bancaribe Bono",
+      "ingreso": 37800,
+      "egreso": 0,
+      "saldo": 94524.19,
+      "timestamp": 1769018241402
+    },
+    {
       "fecha": "2026-01-10",
       "descripcion": "Compra pan rosneidi",
       "ingreso": 0,
       "egreso": 3400,
       "saldo": 56724.19,
-      "timestamp": 1768064217857
+      "timestamp": 1768064217857,
+      "monto": -3400
     },
     {
       "fecha": "2025-12-31",
