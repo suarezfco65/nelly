@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2026-01-27",
+      "descripcion": "Transporte Alcaldia",
+      "ingreso": 0,
+      "egreso": 7200,
+      "saldo": 51209.15,
+      "timestamp": 1769523792588
+    },
+    {
       "fecha": "2026-01-21",
       "descripcion": "dif pago paniales",
       "ingreso": 0,
       "egreso": 286,
       "saldo": 58409.15,
-      "timestamp": 1769020591190
+      "timestamp": 1769020591190,
+      "monto": -286
     },
     {
       "fecha": "2026-01-21",
