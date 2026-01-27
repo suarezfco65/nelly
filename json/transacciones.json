@@ -2,11 +2,20 @@
   "transacciones": [
     {
       "fecha": "2026-01-27",
+      "descripcion": "Pago sr Wilfrido ",
+      "ingreso": 0,
+      "egreso": 3615,
+      "saldo": 47594.15,
+      "timestamp": 1769556771667
+    },
+    {
+      "fecha": "2026-01-27",
       "descripcion": "Transporte Alcaldia",
       "ingreso": 0,
       "egreso": 7200,
       "saldo": 51209.15,
-      "timestamp": 1769523792588
+      "timestamp": 1769523792588,
+      "monto": -7200
     },
     {
       "fecha": "2026-01-21",
