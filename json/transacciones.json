@@ -1,12 +1,21 @@
 {
   "transacciones": [
     {
+      "fecha": "2026-02-10",
+      "descripcion": "Bancaribe",
+      "ingreso": 42000,
+      "egreso": 0,
+      "saldo": 89594.15,
+      "timestamp": 1770729034177
+    },
+    {
       "fecha": "2026-01-27",
       "descripcion": "Pago sr Wilfrido ",
       "ingreso": 0,
       "egreso": 3615,
       "saldo": 47594.15,
-      "timestamp": 1769556771667
+      "timestamp": 1769556771667,
+      "monto": -3615
     },
     {
       "fecha": "2026-01-27",
